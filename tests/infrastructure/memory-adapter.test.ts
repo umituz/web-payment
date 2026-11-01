@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createMemoryPolarAdapter } from '../../src/infrastructure/services/memory/create-memory-adapter';
+import { createMemoryBillingAdapter } from '../../src/infrastructure/services/memory/create-memory-adapter';
 
-describe('createMemoryPolarAdapter', () => {
+describe('createMemoryBillingAdapter', () => {
   it('starts with default inactive free status', async () => {
-    const adapter = createMemoryPolarAdapter();
+    const adapter = createMemoryBillingAdapter();
     const status = await adapter.getStatus('user_1');
     expect(status.plan).toBe('free');
     expect(status.subscriptionStatus).toBe('none');
@@ -11,7 +11,7 @@ describe('createMemoryPolarAdapter', () => {
 
   it('updates status and records history upon checkout', async () => {
     const onCheckout = vi.fn();
-    const adapter = createMemoryPolarAdapter({ onCheckout });
+    const adapter = createMemoryBillingAdapter({ onCheckout });
 
     const checkout = await adapter.createCheckout({
       productId: 'prod_pro_10',
@@ -45,7 +45,7 @@ describe('createMemoryPolarAdapter', () => {
 
   it('cancels subscription gracefully', async () => {
     const onCancel = vi.fn();
-    const adapter = createMemoryPolarAdapter({
+    const adapter = createMemoryBillingAdapter({
       initialStatus: { plan: 'pro_10', subscriptionStatus: 'active' },
       onCancel,
     });

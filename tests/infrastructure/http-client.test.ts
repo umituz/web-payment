@@ -46,15 +46,13 @@ describe('FetchHttpClient', () => {
   });
 
   it('exposes a repeatable text() accessor', async () => {
-    // Regression: the body was previously consumed by json() first, so the
-    // error-path text() call always threw "Body has already been consumed".
     const body = '{"error":"denied"}';
     vi.stubGlobal('fetch', mockFetchOnce(body, { status: 403 }));
 
     const client = new FetchHttpClient();
     const response = await client.request({ method: 'GET', url: 'https://x.test' });
     expect(await response.text()).toBe(body);
-    expect(await response.text()).toBe(body); // second call still works
+    expect(await response.text()).toBe(body);
   });
 
   it('propagates ok/status faithfully', async () => {

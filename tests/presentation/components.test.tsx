@@ -1,19 +1,18 @@
-// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { PolarProvider } from '../../src/presentation/components/PolarProvider';
-import { PolarCheckoutButton } from '../../src/presentation/components/PolarCheckoutButton';
+import { BillingProvider } from '../../src/presentation/components/BillingProvider';
+import { CheckoutButton } from '../../src/presentation/components/CheckoutButton';
 import { SubscriptionStatusBadge } from '../../src/presentation/components/SubscriptionStatusBadge';
 import { PricingTable } from '../../src/presentation/components/PricingTable';
 import { BillingHistoryList } from '../../src/presentation/components/BillingHistoryList';
 import { CancelSubscriptionButton } from '../../src/presentation/components/CancelSubscriptionButton';
 import { NoopNavigationStrategy } from '../../src/presentation/navigation/navigation.strategy';
-import type { PolarAdapter } from '../../src/domain/interfaces';
+import type { BillingAdapter } from '../../src/domain/interfaces';
 import { FREE_SUBSCRIPTION_STATUS } from '../../src/domain/entities/subscription.entity';
-import type { PolarProduct } from '../../src/domain/entities/product.entity';
+import type { Product } from '../../src/domain/entities/product.entity';
 
-function stubAdapter(overrides?: Partial<PolarAdapter>): PolarAdapter {
+function stubAdapter(overrides?: Partial<BillingAdapter>): BillingAdapter {
   return {
     getStatus: vi.fn().mockResolvedValue(FREE_SUBSCRIPTION_STATUS),
     createCheckout: vi.fn().mockResolvedValue({ url: 'https://pay.test/1', id: 'co_1' }),
@@ -25,15 +24,15 @@ function stubAdapter(overrides?: Partial<PolarAdapter>): PolarAdapter {
   };
 }
 
-function mount(ui: ReactNode, adapterImpl: PolarAdapter = stubAdapter()) {
+function mount(ui: ReactNode, adapterImpl: BillingAdapter = stubAdapter()) {
   return render(
-    <PolarProvider adapter={adapterImpl} userId="user_1" navigation={new NoopNavigationStrategy()}>
+    <BillingProvider adapter={adapterImpl} userId="user_1" navigation={new NoopNavigationStrategy()}>
       {ui}
-    </PolarProvider>,
+    </BillingProvider>,
   );
 }
 
-const product = (id: string, name: string): PolarProduct => ({
+const product = (id: string, name: string): Product => ({
   id,
   name,
   description: null,
@@ -67,10 +66,10 @@ afterEach(() => {
   vi.mocked(console.error).mockRestore();
 });
 
-describe('PolarCheckoutButton', () => {
+describe('CheckoutButton', () => {
   it('renders the label and starts checkout on click', async () => {
     const adapterImpl = stubAdapter();
-    mount(<PolarCheckoutButton productId="prod_1" label="Upgrade" />, adapterImpl);
+    mount(<CheckoutButton productId="prod_1" label="Upgrade" />, adapterImpl);
 
     fireEvent.click(screen.getByRole('button', { name: 'Upgrade' }));
 
@@ -88,7 +87,7 @@ describe('PolarCheckoutButton', () => {
       ),
     });
     mount(
-      <PolarCheckoutButton productId="prod_1" label="Yükselt" labels={{ loading: 'Yönlendiriliyor…' }} />,
+      <CheckoutButton productId="prod_1" label="Yükselt" labels={{ loading: 'Yönlendiriliyor…' }} />,
       adapterImpl,
     );
 
@@ -103,7 +102,7 @@ describe('PolarCheckoutButton', () => {
     const adapterImpl = stubAdapter({
       createCheckout: vi.fn().mockRejectedValue(new Error('payment provider down')),
     });
-    mount(<PolarCheckoutButton productId="prod_1" label="Go" onError={onError} />, adapterImpl);
+    mount(<CheckoutButton productId="prod_1" label="Go" onError={onError} />, adapterImpl);
 
     fireEvent.click(screen.getByRole('button', { name: 'Go' }));
 
@@ -163,12 +162,11 @@ describe('PricingTable', () => {
     expect(screen.getByText('Pro Plan')).toBeDefined();
     expect(screen.getByText('$19.99')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Subscribe' })).toBeDefined();
-    // No token supplied → no product fetch path is armed at all.
     expect(screen.queryByText(/Loading pricing/)).toBeNull();
   });
 
   it('filters by recurring interval', () => {
-    const yearly: PolarProduct = { ...product('prod_y', 'Yearly'), recurringInterval: 'yearly' };
+    const yearly: Product = { ...product('prod_y', 'Yearly'), recurringInterval: 'yearly' };
     mount(<PricingTable products={[product('prod_m', 'Monthly'), yearly]} />);
 
     expect(screen.getByText('Monthly')).toBeDefined();
@@ -176,7 +174,7 @@ describe('PricingTable', () => {
   });
 
   it('renders all intervals when filterInterval is null', () => {
-    const yearly: PolarProduct = { ...product('prod_y', 'Yearly'), recurringInterval: 'yearly' };
+    const yearly: Product = { ...product('prod_y', 'Yearly'), recurringInterval: 'yearly' };
     mount(<PricingTable products={[product('prod_m', 'Monthly'), yearly]} filterInterval={null} />);
 
     expect(screen.getByText('Monthly')).toBeDefined();

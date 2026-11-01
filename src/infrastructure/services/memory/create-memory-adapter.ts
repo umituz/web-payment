@@ -1,4 +1,4 @@
-import type { PolarAdapter } from '../../../domain/interfaces';
+import type { BillingAdapter } from '../../../domain/interfaces';
 import type {
   CancellationReason,
   CancelResult,
@@ -17,7 +17,7 @@ export interface MemoryAdapterConfig {
   onCancel?: (reason?: CancellationReason) => void;
 }
 
-export function createMemoryPolarAdapter(config: MemoryAdapterConfig = {}): PolarAdapter {
+export function createMemoryBillingAdapter(config: MemoryAdapterConfig = {}): BillingAdapter {
   let status: SubscriptionStatus = {
     plan: 'free',
     subscriptionStatus: 'none',

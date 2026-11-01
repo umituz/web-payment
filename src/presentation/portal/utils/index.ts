@@ -1,6 +1,3 @@
-/**
- * Billing Portal Utilities — barrel
- */
 
 export {
   formatNumber,
@@ -27,4 +24,4 @@ export {
   getTrialDaysText,
 } from './billing';
 
-export { transformPolarProductToPlan, transformPolarProducts } from './polar';
+export { transformProductToPlan, transformProducts } from './plans';

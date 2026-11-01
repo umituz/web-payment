@@ -1,14 +1,3 @@
-/**
- * Webhook signature verification — Polar follows the Standard Webhooks
- * specification: `webhook-id`, `webhook-timestamp` and `webhook-signature`
- * headers, where the signature is
- * `v1,base64(HMAC-SHA256(secret, id + "." + timestamp + "." + rawBody))`.
- *
- * Implemented on WebCrypto (`crypto.subtle`) so the same code runs in
- * Cloudflare Workers, Deno and Node >= 18 without a node:crypto dependency.
- * The raw (unparsed) request body must be used — parsing first breaks the
- * byte-for-byte HMAC input.
- */
 
 export interface WebhookHeadersLike {
   get(name: string): string | null | undefined;
@@ -70,7 +59,6 @@ async function hmacSha256(keyBytes: Uint8Array, payload: string): Promise<string
   return btoa(binary);
 }
 
-/** Candidate HMAC keys: the base64-decoded secret, and the raw UTF-8 bytes. */
 function keyCandidates(secret: string): Uint8Array[] {
   const stripped = stripSecretPrefix(secret);
   const decoded = base64ToBytes(stripped);
@@ -83,7 +71,6 @@ function keyCandidates(secret: string): Uint8Array[] {
   return candidates;
 }
 
-/** Parses `v1,<b64>` entries from a comma-separated signature header. */
 function signaturesFromHeader(header: string): string[] {
   return header
     .split(',')
@@ -93,11 +80,10 @@ function signaturesFromHeader(header: string): string[] {
 }
 
 export interface VerifyWebhookOptions {
-  /** Reject deliveries older than this many milliseconds (default: off). */
   toleranceMs?: number;
 }
 
-export async function verifyPolarWebhook(
+export async function verifyWebhook(
   rawBody: string,
   headers: WebhookHeadersLike | Record<string, string>,
   secret: string,
@@ -126,7 +112,6 @@ export async function verifyPolarWebhook(
   return false;
 }
 
-/** Length-checked comparison that does not short-circuit on first mismatch. */
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let mismatch = 0;

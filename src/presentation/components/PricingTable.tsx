@@ -1,56 +1,27 @@
-/**
- * `<PricingTable>` — render a list of Polar products as a pricing grid.
- *
- * Two data sources:
- *   - `products` — pass server-fetched products directly (recommended for
- *     production: no Polar token ever reaches the browser).
- *   - `apiToken` — fetch client-side via `usePolarProducts` (development /
- *     server-rendered setups only; OAT tokens must not ship to browsers).
- *
- * ```tsx
- * <PricingTable
- *   products={serverProducts}
- *   ctaLabel="Subscribe"
- * />
- * ```
- */
 
 import { useMemo } from 'react';
-import { usePolarProducts } from '../hooks/usePolarProducts';
-import type { PolarProduct, BillingCycle } from '../../domain/entities';
-import { PolarCheckoutButton } from './PolarCheckoutButton';
+import { useProducts } from '../hooks/useProducts';
+import type { Product, BillingCycle } from '../../domain/entities';
+import { CheckoutButton } from './CheckoutButton';
 import { ProductPricing } from '../utils/product-pricing';
 import { MoneyFormatter } from '../../infrastructure/utils/money-formatter';
 import { VisualTokens } from '../theme/visual-tokens';
 
 export interface PricingTableProps {
-  /**
-   * Server-fetched products. When provided, no network request is made and
-   * `apiToken` is ignored — the secure pattern for production apps.
-   */
-  products?: PolarProduct[];
-  /** Polar OAT token for client-side fetching. Development use only. */
+  products?: Product[];
   apiToken?: string;
   organizationId?: string;
   isRecurring?: boolean;
   ctaLabel?: string;
   onError?: (error: Error) => void;
-  /**
-   * Filter products by their recurring interval. Defaults to `'monthly'`.
-   * Pass `null` to render every product regardless of interval.
-   */
   filterInterval?: BillingCycle | null;
-  /** Locale used for currency formatting (e.g. `"de-DE"`). */
   locale?: string;
-  /** User-facing strings — override any subset for localization. */
   labels?: PricingTableLabels;
 }
 
-/** User-facing strings — override any subset for localization. */
 export interface PricingTableLabels {
   loading?: string;
   empty?: string;
-  /** Prefix before the error message in the error state. */
   errorPrefix?: string;
   retry?: string;
 }
@@ -73,9 +44,8 @@ export function PricingTable({
   locale,
   labels,
 }: PricingTableProps) {
-  // Skip the client-side fetch entirely when products are supplied.
   const enabled = productsOverride === undefined && apiToken !== undefined;
-  const { products: fetchedProducts, loading, error, refetch } = usePolarProducts({
+  const { products: fetchedProducts, loading, error, refetch } = useProducts({
     apiToken: apiToken ?? '',
     organizationId,
     isRecurring,
@@ -170,7 +140,7 @@ export function PricingTable({
 }
 
 interface ProductCardProps {
-  product: PolarProduct;
+  product: Product;
   moneyFormatter: MoneyFormatter;
   ctaLabel: string;
   onError?: (error: Error) => void;
@@ -243,7 +213,7 @@ function ProductCard({ product, moneyFormatter, ctaLabel, onError }: ProductCard
       ) : null}
 
       <div style={{ marginTop: 'auto' }}>
-        <PolarCheckoutButton
+        <CheckoutButton
           productId={product.id}
           billingCycle={product.recurringInterval ?? undefined}
           label={ctaLabel}

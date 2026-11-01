@@ -13,7 +13,7 @@ import {
 import { POLAR_AMOUNT_TYPE } from '../../src/domain/enums/amount-type.enum';
 
 describe('subscription status enum', () => {
-  it('exposes the full Polar status set', () => {
+  it('exposes the full status set', () => {
     expect(SUBSCRIPTION_STATUS_VALUES).toHaveLength(9);
     expect(SUBSCRIPTION_STATUS.ACTIVE).toBe('active');
     expect(SUBSCRIPTION_STATUS.INCOMPLETE_EXPIRED).toBe('incomplete_expired');
@@ -32,9 +32,6 @@ describe('subscription status enum', () => {
 
 describe('billing cycle enum', () => {
   it('only accepts canonical values through the type guard', () => {
-    // Regression: 'month'/'year' (legacy Polar spellings) previously passed
-    // the guard while being typed as BillingCycle — impossible values could
-    // reach the public contract. The guard must be strict.
     expect(isKnownBillingCycle('monthly')).toBe(true);
     expect(isKnownBillingCycle('YEARLY')).toBe(true);
     expect(isKnownBillingCycle('month')).toBe(false);
@@ -43,7 +40,7 @@ describe('billing cycle enum', () => {
     expect(isKnownBillingCycle(undefined)).toBe(false);
   });
 
-  it('parses legacy Polar spellings into canonical values', () => {
+  it('parses legacy spellings into canonical values', () => {
     expect(parseBillingCycle('month')).toBe(BILLING_CYCLE.MONTHLY);
     expect(parseBillingCycle('Monthly')).toBe(BILLING_CYCLE.MONTHLY);
     expect(parseBillingCycle('year')).toBe(BILLING_CYCLE.YEARLY);
@@ -59,7 +56,7 @@ describe('billing cycle enum', () => {
 });
 
 describe('amount type enum', () => {
-  it('covers the documented Polar amount types', () => {
+  it('covers the documented amount types', () => {
     expect(POLAR_AMOUNT_TYPE.FIXED).toBe('fixed');
     expect(POLAR_AMOUNT_TYPE.METERED_UNIT).toBe('metered_unit');
   });

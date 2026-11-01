@@ -1,17 +1,3 @@
-/**
- * PolarProvider — owns the SDK lifecycle and exposes the context value.
- *
- * Responsibilities (single):
- *   - Track current `userId` and trigger a refresh on change
- *   - Expose checkout / sync / cancel / portal helpers
- *   - Forward a navigation strategy so `startCheckout` can redirect
- *
- * Non-responsibilities:
- *   - The provider knows only the `PolarAdapter` contract — never a
- *     concrete transport implementation.
- *   - Cross-cutting concerns (e.g. "redirect URL validation") are split
- *     into `security.util`.
- */
 
 import {
   useCallback,
@@ -21,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { PolarAdapter } from '../../domain/interfaces';
+import type { BillingAdapter } from '../../domain/interfaces';
 import type {
   CancellationReason,
   CancelResult,
@@ -41,16 +27,11 @@ import {
   NoopNavigationStrategy,
   type NavigationStrategy,
 } from '../navigation/navigation.strategy';
-import { PolarContext, type PolarContextValue } from '../context/polar-context';
+import { BillingContext, type BillingContextValue } from '../context/billing-context';
 
-export interface PolarProviderProps {
-  adapter: PolarAdapter;
+export interface BillingProviderProps {
+  adapter: BillingAdapter;
   userId?: string;
-  /**
-   * Strategy used to redirect the browser to the checkout URL. Defaults to
-   * `NoopNavigationStrategy` in environments without `window`, and to
-   * `window.location` in the browser.
-   */
   navigation?: NavigationStrategy;
   children: ReactNode;
 }
@@ -64,20 +45,18 @@ function defaultNavigation(): NavigationStrategy {
   };
 }
 
-export function PolarProvider({
+export function BillingProvider({
   adapter,
   userId,
   navigation,
   children,
-}: PolarProviderProps) {
+}: BillingProviderProps) {
   const [status, setStatus] = useState<SubscriptionStatus>(FREE_SUBSCRIPTION_STATUS);
   const [loading, setLoading] = useState(true);
 
   const adapterRef = useRef(adapter);
   const userIdRef = useRef(normalizeUserId(userId));
   const navigationRef = useRef<NavigationStrategy>(navigation ?? defaultNavigation());
-  // Monotonic token: only the most recent refresh may commit state, so a
-  // slow earlier response can never overwrite a newer one.
   const refreshGenerationRef = useRef(0);
 
   adapterRef.current = adapter;
@@ -99,8 +78,6 @@ export function PolarProvider({
       if (generation !== refreshGenerationRef.current) return;
       setStatus(next);
     } catch {
-      // Surface as a free plan — the UI can show a "couldn't load" banner
-      // derived from `status`; the SDK should not crash on transient errors.
       if (generation !== refreshGenerationRef.current) return;
       setStatus(FREE_SUBSCRIPTION_STATUS);
     } finally {
@@ -116,19 +93,19 @@ export function PolarProvider({
 
   const startCheckout = useCallback(async (params: CheckoutParams): Promise<void> => {
     if (!isValidProductId(params.productId)) {
-      throw new Error('[polar-billing] Invalid productId: must be a non-empty string');
+      throw new Error('[billing] Invalid productId: must be a non-empty string');
     }
     const uid = userIdRef.current;
     if (!uid) {
-      throw new Error('[polar-billing] Cannot start checkout: no authenticated user');
+      throw new Error('[billing] Cannot start checkout: no authenticated user');
     }
 
     const result = await adapterRef.current.createCheckout({ ...params, userId: uid });
     if (!isValidCheckoutUrl(result.url)) {
-      throw new Error('[polar-billing] Invalid checkout URL: must start with https:// or http://');
+      throw new Error('[billing] Invalid checkout URL: must start with https:// or http://');
     }
     if (isProductionInsecureUrl(result.url)) {
-      throw new Error('[polar-billing] Insecure http:// checkout URL in production');
+      throw new Error('[billing] Insecure http:// checkout URL in production');
     }
 
     navigationRef.current.redirect(result.url);
@@ -170,12 +147,12 @@ export function PolarProvider({
   const getPortalUrl = useCallback(async (): Promise<string> => {
     const uid = userIdRef.current;
     if (!uid) {
-      throw new Error('[polar-billing] Cannot get portal URL: no authenticated user');
+      throw new Error('[billing] Cannot get portal URL: no authenticated user');
     }
     return adapterRef.current.getPortalUrl(uid);
   }, []);
 
-  const value = useMemo<PolarContextValue>(
+  const value = useMemo<BillingContextValue>(
     () => ({
       status,
       loading,
@@ -198,5 +175,5 @@ export function PolarProvider({
     ],
   );
 
-  return <PolarContext.Provider value={value}>{children}</PolarContext.Provider>;
+  return <BillingContext.Provider value={value}>{children}</BillingContext.Provider>;
 }

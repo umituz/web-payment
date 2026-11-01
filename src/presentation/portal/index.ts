@@ -1,11 +1,4 @@
-/**
- * Billing Portal — public surface of `@umituz/web-polar-payment/portal`
- *
- * A self-hosted billing UI (plans, subscription, payment methods,
- * invoices, usage) that renders whatever a `BillingApiClient` returns.
- */
 
-// Components
 export {
   BillingPortal,
   BillingLayout,
@@ -24,11 +17,9 @@ export type {
   PortalButtonSize,
 } from './components';
 
-// Hooks (data seam)
 export { useBilling, createStubBillingApiClient } from './hooks';
 export type { BillingApiClient, UseBillingOptions, UseBillingReturn } from './hooks';
 
-// Labels (i18n replacement)
 export {
   DEFAULT_BILLING_LABELS,
   BillingLabelsProvider,
@@ -38,7 +29,6 @@ export {
 } from './labels';
 export type { BillingLabels, BillingLabelsOverrides } from './labels';
 
-// Utils
 export {
   formatNumber,
   formatPrice,
@@ -62,11 +52,10 @@ export {
   formatFeature,
   isPopularPlan,
   getTrialDaysText,
-  transformPolarProductToPlan,
-  transformPolarProducts,
+  transformProductToPlan,
+  transformProducts,
 } from './utils';
 
-// Types
 export type {
   BillingCycle,
   SubscriptionStatus,
@@ -93,7 +82,6 @@ export type {
   BillingPageProps,
 } from './types';
 
-// Constants
 export {
   SUBSCRIPTION_STATUS,
   INVOICE_STATUS,
@@ -103,13 +91,7 @@ export {
 } from './constants';
 export { BILLING_CYCLE } from './types';
 
-// Polar glue — adapter binding + turnkey page over a PolarAdapter
-export {
-  createPolarPortalClient,
-  PolarBillingPage,
-} from './polar';
-export type {
-  PolarPortalClient,
-  PolarPortalClientOptions,
-  PolarBillingPageProps,
-} from './polar';
+export { createPortalClient } from './create-portal-client';
+export type { PortalClient, PortalClientOptions } from './create-portal-client';
+export { TurnkeyBillingPage } from './TurnkeyBillingPage';
+export type { TurnkeyBillingPageProps } from './TurnkeyBillingPage';

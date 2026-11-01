@@ -1,19 +1,9 @@
-/**
- * Product mapper.
- *
- * Polar.sh exposes snake_case fields. This mapper is the single boundary that
- * translates the public API contract into idiomatic camelCase domain types —
- * the rest of the SDK never touches snake_case.
- */
 
-import type { PolarAmountType } from '../enums/amount-type.enum';
+import type { AmountType } from '../enums/amount-type.enum';
 import { parseBillingCycle, type BillingCycle } from '../enums/billing-cycle.enum';
 
-/* ------------------------------------------------------------------ */
-/* DTOs (raw Polar.sh payload, snake_case)                             */
-/* ------------------------------------------------------------------ */
 
-export interface PolarProductDto {
+export interface ProductDto {
   id: string;
   name: string;
   description: string | null;
@@ -21,14 +11,14 @@ export interface PolarProductDto {
   recurring_interval: string | null;
   is_archived: boolean;
   organization_id: string;
-  prices: PolarPriceDto[];
-  benefits: PolarBenefitDto[];
+  prices: ProductPriceDto[];
+  benefits: ProductBenefitDto[];
   metadata: Record<string, unknown>;
   created_at: string;
   modified_at: string | null;
 }
 
-export interface PolarPriceDto {
+export interface ProductPriceDto {
   id: string;
   type: string;
   amount_type: string;
@@ -40,7 +30,7 @@ export interface PolarPriceDto {
   legacy?: boolean;
 }
 
-export interface PolarBenefitDto {
+export interface ProductBenefitDto {
   id: string;
   type: string;
   description: string | null;
@@ -48,21 +38,18 @@ export interface PolarBenefitDto {
 }
 
 export interface ProductListResponseDto {
-  items: PolarProductDto[];
+  items: ProductDto[];
   pagination: {
     total_count: number;
     max_page: number;
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Domain entities (camelCase)                                         */
-/* ------------------------------------------------------------------ */
 
-export interface PolarPrice {
+export interface ProductPrice {
   id: string;
-  type: PolarAmountType;
-  amountType: PolarAmountType;
+  type: AmountType;
+  amountType: AmountType;
   amount?: number;
   currency: string;
   recurringInterval?: BillingCycle;
@@ -71,14 +58,14 @@ export interface PolarPrice {
   legacy?: boolean;
 }
 
-export interface PolarBenefit {
+export interface ProductBenefit {
   id: string;
   type: string;
   description: string | null;
   properties: Record<string, unknown>;
 }
 
-export interface PolarProduct {
+export interface Product {
   id: string;
   name: string;
   description: string | null;
@@ -86,15 +73,15 @@ export interface PolarProduct {
   recurringInterval: BillingCycle | null;
   isArchived: boolean;
   organizationId: string;
-  prices: PolarPrice[];
-  benefits: PolarBenefit[];
+  prices: ProductPrice[];
+  benefits: ProductBenefit[];
   metadata: Record<string, unknown>;
   createdAt: string;
   modifiedAt: string | null;
 }
 
 export interface ProductListResponse {
-  items: PolarProduct[];
+  items: Product[];
   pagination: {
     totalCount: number;
     maxPage: number;
@@ -108,9 +95,6 @@ export interface ProductListParams {
   limit?: number;
 }
 
-/* ------------------------------------------------------------------ */
-/* Mapping (DTO -> Domain)                                             */
-/* ------------------------------------------------------------------ */
 
 const KNOWN_AMOUNT_TYPES: ReadonlySet<string> = new Set([
   'fixed',
@@ -120,8 +104,8 @@ const KNOWN_AMOUNT_TYPES: ReadonlySet<string> = new Set([
   'metered_unit',
 ]);
 
-function toAmountType(raw: string | undefined): PolarAmountType {
-  if (raw && KNOWN_AMOUNT_TYPES.has(raw)) return raw as PolarAmountType;
+function toAmountType(raw: string | undefined): AmountType {
+  if (raw && KNOWN_AMOUNT_TYPES.has(raw)) return raw as AmountType;
   return 'fixed';
 }
 
@@ -133,7 +117,7 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
 }
 
-function toPrice(dto: PolarPriceDto): PolarPrice {
+function toPrice(dto: ProductPriceDto): ProductPrice {
   return {
     id: String(dto.id),
     type: toAmountType(dto.type),
@@ -147,7 +131,7 @@ function toPrice(dto: PolarPriceDto): PolarPrice {
   };
 }
 
-function toBenefit(dto: PolarBenefitDto): PolarBenefit {
+function toBenefit(dto: ProductBenefitDto): ProductBenefit {
   return {
     id: String(dto.id),
     type: String(dto.type),
@@ -156,14 +140,9 @@ function toBenefit(dto: PolarBenefitDto): PolarBenefit {
   };
 }
 
-/**
- * Map a raw Polar product payload. Throws a `TypeError` for absent input —
- * callers that can receive empty bodies should check first and surface a
- * typed error.
- */
-export function mapProduct(dto: PolarProductDto | null | undefined): PolarProduct {
+export function mapProduct(dto: ProductDto | null | undefined): Product {
   if (!dto || typeof dto !== 'object') {
-    throw new TypeError('mapProduct: expected a Polar product DTO object');
+    throw new TypeError('mapProduct: expected a product DTO object');
   }
   return {
     id: String(dto.id),
@@ -181,10 +160,6 @@ export function mapProduct(dto: PolarProductDto | null | undefined): PolarProduc
   };
 }
 
-/**
- * Map a raw Polar product-list payload. Absent or malformed input maps to
- * an empty page instead of throwing — list responses are safely ignorable.
- */
 export function mapProductList(
   dto: ProductListResponseDto | null | undefined,
 ): ProductListResponse {

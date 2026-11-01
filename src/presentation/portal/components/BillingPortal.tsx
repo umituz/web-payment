@@ -1,10 +1,3 @@
-/**
- * Billing Portal
- *
- * Main billing portal with tabs.
- * Uses proper a11y semantics (role=tablist, role=tab, aria-selected,
- * aria-controls) and delegates tab content to dedicated subcomponents.
- */
 
 import { CreditCard, FileText, BarChart3, Settings, AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -217,9 +210,6 @@ const BillingPortalBody = ({
   );
 };
 
-/**
- * Invoices list — extracted inline so BillingPortal stays focused on layout.
- */
 const InvoiceList = ({
   invoices,
   onView,

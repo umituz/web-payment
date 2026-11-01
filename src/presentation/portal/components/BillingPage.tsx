@@ -1,11 +1,3 @@
-/**
- * BillingPage
- *
- * Compose BillingLayout + BillingPortal. Brand name and support
- * contact are required — there's no silent fallback brand that
- * pretends everything is fine when the consumer forgets to
- * provide them.
- */
 
 import { BillingLayout, BillingPortal } from '.';
 import type { BillingConfig, BillingPageProps } from '../types';

@@ -1,14 +1,7 @@
-/**
- * useCheckoutButton — encapsulates the click-to-checkout flow.
- *
- * Extracted from `PolarCheckoutButton` so the loading/disabled state and
- * error surfacing can be reused in custom layouts (e.g. a hero CTA, an
- * inline link) without duplicating the state machine.
- */
 
 import { useCallback, useState } from 'react';
 import type { CheckoutParams } from '../../domain/entities/checkout.entity';
-import { usePolarBilling } from '../context/polar-context';
+import { useBilling } from '../context/billing-context';
 
 export interface UseCheckoutButtonOptions {
   productId: string;
@@ -27,7 +20,7 @@ export interface UseCheckoutButtonResult {
 export function useCheckoutButton(
   options: UseCheckoutButtonOptions,
 ): UseCheckoutButtonResult {
-  const { startCheckout } = usePolarBilling();
+  const { startCheckout } = useBilling();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

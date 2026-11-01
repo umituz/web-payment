@@ -1,13 +1,3 @@
-/**
- * MoneyFormatter — formats Polar.sh amounts for display.
- *
- * Polar stores amounts as the smallest currency unit (cents for USD,
- * yen for JPY, etc.). Centralizing the formatting here means:
- *   - The "divide by 100" rule lives in one place
- *   - Locale and currency defaults are explicit
- *   - Custom currencies (e.g. zero-decimal) can be added without
- *     touching call sites
- */
 
 import { minorUnitDivisor } from '../../domain/utils/minor-units';
 
@@ -27,12 +17,6 @@ export class MoneyFormatter {
     this.locale = locale;
   }
 
-  /**
-   * Format a Polar amount (smallest unit) as a localized currency string.
-   * Returns the fallback label (e.g. `"Custom"`) when the amount is
-   * undefined — the Polar contract signals "contact sales" by omitting
-   * the amount.
-   */
   format(
     amount: number | undefined,
     currency: string | undefined,

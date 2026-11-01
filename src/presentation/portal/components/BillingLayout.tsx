@@ -1,23 +1,10 @@
-/**
- * Billing Layout
- *
- * Page wrapper for the billing portal. All copy comes from the labels
- * catalog; brand name, logo and the dashboard route come from config —
- * no hardcoded strings, no router dependency (`onBack` lets SPA hosts
- * navigate without reloading; the default is a plain anchor).
- */
 
 import { VisualTokens } from '../../theme/visual-tokens';
 import { useBillingLabels, formatLabel } from '../labels';
 import type { BillingLayoutProps } from '../types';
 
-/**
- * Default brand mark size used across billing pages. Centralized so
- * one tweak keeps every page visually consistent.
- */
 const BRAND_LOGO_SIZE = 32;
 
-/** Fallback brand mark — the brand's initial on the primary color. */
 const DefaultBrandMark = ({ initial }: { initial: string }) => (
   <span
     aria-hidden="true"

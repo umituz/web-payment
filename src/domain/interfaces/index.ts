@@ -1,1 +1,1 @@
-export * from './polar-adapter.interface';
+export * from './billing-adapter.interface';

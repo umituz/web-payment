@@ -1,9 +1,3 @@
-/**
- * StatusLabel — user-facing display labels for subscription statuses.
- *
- * Centralizes the strings so the i18n layer can swap them later without
- * touching components.
- */
 
 import type { SubscriptionStatusValue } from '../../domain/enums/subscription-status.enum';
 

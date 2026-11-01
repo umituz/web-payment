@@ -8,14 +8,7 @@ import type {
   SyncResult,
 } from '../entities';
 
-/**
- * PolarAdapter — the single SDK-facing interface.
- *
- * Implementations (REST, custom, mock, etc.) translate platform-specific
- * calls into the contract below. The rest of the SDK depends only on this
- * interface (Dependency Inversion).
- */
-export interface PolarAdapter {
+export interface BillingAdapter {
   getStatus(userId: string): Promise<SubscriptionStatus>;
   createCheckout(params: CheckoutParams): Promise<CheckoutResult>;
   syncSubscription(userId: string, checkoutId?: string): Promise<SyncResult>;

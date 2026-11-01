@@ -21,9 +21,7 @@ describe('normalization', () => {
     expect(normalizeStatus(undefined)).toBe('none');
   });
 
-  it('normalizes legacy Polar intervals to canonical billing cycles', () => {
-    // Regression: legacy 'month' must come out as canonical 'monthly', never
-    // leak through as 'month' typed as BillingCycle.
+  it('normalizes legacy provider intervals to canonical billing cycles', () => {
     expect(normalizeBillingCycle('month')).toBe('monthly');
     expect(normalizeBillingCycle('year')).toBe('yearly');
     expect(normalizeBillingCycle('monthly')).toBe('monthly');
@@ -133,7 +131,6 @@ describe('MoneyFormatter', () => {
 
   it('returns a contact-sales label for absent amounts', () => {
     expect(new MoneyFormatter().format(undefined, 'USD')).toBe('Custom');
-    // Malformed wire data on purpose — null is not part of the signature.
     expect(new MoneyFormatter().format(null as unknown as number, 'USD')).toBe('Custom');
   });
 

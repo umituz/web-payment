@@ -1,13 +1,7 @@
-/**
- * useCancelSubscription — encapsulates the cancel flow.
- *
- * Mirrors `useCheckoutButton` so the loading/error states live in one place
- * and can be composed into buttons, dialogs, or full-page forms.
- */
 
 import { useCallback, useState } from 'react';
 import type { CancellationReason, CancelResult } from '../../domain/entities/cancellation.entity';
-import { usePolarBilling } from '../context/polar-context';
+import { useBilling } from '../context/billing-context';
 
 export interface UseCancelSubscriptionOptions {
   onError?: (error: Error) => void;
@@ -23,7 +17,7 @@ export interface UseCancelSubscriptionResult {
 export function useCancelSubscription(
   options: UseCancelSubscriptionOptions = {},
 ): UseCancelSubscriptionResult {
-  const { cancelSubscription } = usePolarBilling();
+  const { cancelSubscription } = useBilling();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

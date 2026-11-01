@@ -1,10 +1,3 @@
-/**
- * Subscription status enum.
- *
- * Single source of truth for the Polar.sh subscription status contract.
- * Derived types (`SubscriptionStatusValue`, `SubscriptionStatusMap`) come from
- * this enum to prevent drift between values, runtime objects, and unions.
- */
 
 export const SUBSCRIPTION_STATUS = {
   ACTIVE: 'active',

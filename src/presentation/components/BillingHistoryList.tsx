@@ -1,36 +1,19 @@
-/**
- * `<BillingHistoryList>` — show the user's order history.
- *
- * Loads the billing history on mount (and exposes a refresh) and
- * renders each order as a row. Loading + empty + error states are
- * explicit.
- */
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import type { OrderItem } from '../../domain/entities/order.entity';
-import { usePolarBilling } from '../context/polar-context';
+import { useBilling } from '../context/billing-context';
 import { MoneyFormatter } from '../../infrastructure/utils/money-formatter';
 import { DateRenderer } from '../../infrastructure/utils/date-renderer';
 import { VisualTokens } from '../theme/visual-tokens';
 
 export interface BillingHistoryListProps {
-  /**
-   * Render the list immediately on mount. Set `false` for a "View history"
-   * disclosure pattern.
-   */
   autoLoad?: boolean;
-  /**
-   * Override the orders array. Used for tests / Storybook previews.
-   */
   orders?: OrderItem[];
   loading?: boolean;
-  /** Locale used for currency + date rendering (e.g. `"de-DE"`). */
   locale?: string;
-  /** User-facing strings — override any subset for localization. */
   labels?: BillingHistoryListLabels;
 }
 
-/** User-facing strings — override any subset for localization. */
 export interface BillingHistoryListLabels {
   loading?: string;
   empty?: string;
@@ -68,7 +51,7 @@ export function BillingHistoryList({
   locale,
   labels,
 }: BillingHistoryListProps) {
-  const { getBillingHistory } = usePolarBilling();
+  const { getBillingHistory } = useBilling();
   const [orders, setOrders] = useState<OrderItem[]>(ordersOverride ?? []);
   const [loading, setLoading] = useState(autoLoad && ordersOverride === undefined);
   const [error, setError] = useState<string | null>(null);

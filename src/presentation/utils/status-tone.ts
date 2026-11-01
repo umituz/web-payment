@@ -1,9 +1,3 @@
-/**
- * StatusTone — maps a subscription status to its visual tone.
- *
- * Single mapping table for the entire SDK. UI components consume
- * `getStatusTone` instead of branching on raw status values.
- */
 
 import { TONE_PAIRS, type VisualTone, type VisualTonePair } from '../theme/visual-tokens';
 import type { SubscriptionStatusValue } from '../../domain/enums/subscription-status.enum';

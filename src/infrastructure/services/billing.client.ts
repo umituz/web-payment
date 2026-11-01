@@ -1,37 +1,21 @@
-/**
- * PolarBillingClient — server-side Polar.sh operations for subscription
- * billing: checkout sessions, the customer portal, and subscription
- * management.
- *
- * Runs wherever `fetch` exists (Node >= 18, Cloudflare Workers, Deno).
- * The access token is an organization-scoped secret and must never reach
- * a public bundle — this class belongs on the server only.
- */
-
-import { POLAR_API_BASE_URL } from '../constants/billing.constants';
+import { API_BASE_URL } from '../constants/billing.constants';
 import { HttpClient, FetchHttpClient } from '../http/http-client';
-import { PolarApiError } from './polar-product.repository';
+import { BillingApiError } from './product.repository';
 
-export const POLAR_SANDBOX_BASE_URL = 'https://sandbox-api.polar.sh/v1';
+export const SANDBOX_API_BASE_URL = 'https://sandbox-api.polar.sh/v1';
 
-export interface PolarBillingConfig {
-  /** Organization Access Token (OAT) — server-side secret. */
+export interface BillingClientConfig {
   apiToken: string;
-  /** Overrides the API base URL (defaults to production, or sandbox when set). */
   baseUrl?: string;
-  /** Uses the isolated Polar sandbox environment. */
   sandbox?: boolean;
-  /** Injectable transport for tests. Defaults to `FetchHttpClient`. */
   http?: HttpClient;
 }
 
 export interface CheckoutSessionParams {
   productId: string;
-  /** Redirect target after payment; Polar substitutes `{CHECKOUT_ID}`. */
   successUrl?: string;
   customerId?: string;
   customerEmail?: string;
-  /** Copied onto the resulting order/subscription — how tenants are linked. */
   metadata?: Record<string, string>;
 }
 
@@ -45,7 +29,7 @@ export interface CheckoutSession {
   metadata?: Record<string, string>;
 }
 
-export interface PolarSubscriptionRecord {
+export interface SubscriptionRecord {
   id: string;
   status: string;
   productId: string;
@@ -63,6 +47,24 @@ export interface PolarSubscriptionRecord {
 
 export interface PortalSession {
   url: string;
+}
+
+export interface CreateProductParams {
+  name: string;
+  description?: string;
+  amountCents: number;
+  currency?: string;
+  metadata?: Record<string, string>;
+}
+
+export interface CreatedProduct {
+  id: string;
+  name: string;
+}
+
+interface ProductDto {
+  id: string;
+  name?: string | null;
 }
 
 interface CheckoutDto {
@@ -96,9 +98,9 @@ interface SubscriptionListDto {
   pagination?: { max_page?: number; current_page?: number; total_count?: number };
 }
 
-function resolveBaseUrl(config: PolarBillingConfig): string {
+function resolveBaseUrl(config: BillingClientConfig): string {
   if (config.baseUrl) return config.baseUrl;
-  return config.sandbox ? POLAR_SANDBOX_BASE_URL : POLAR_API_BASE_URL;
+  return config.sandbox ? SANDBOX_API_BASE_URL : API_BASE_URL;
 }
 
 function mapCheckout(dto: CheckoutDto): CheckoutSession {
@@ -113,7 +115,7 @@ function mapCheckout(dto: CheckoutDto): CheckoutSession {
   };
 }
 
-function mapSubscription(dto: SubscriptionDto): PolarSubscriptionRecord {
+function mapSubscription(dto: SubscriptionDto): SubscriptionRecord {
   return {
     id: dto.id,
     status: dto.status,
@@ -131,12 +133,12 @@ function mapSubscription(dto: SubscriptionDto): PolarSubscriptionRecord {
   };
 }
 
-export class PolarBillingClient {
+export class BillingClient {
   private readonly http: HttpClient;
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
-  constructor(config: PolarBillingConfig) {
+  constructor(config: BillingClientConfig) {
     this.http = config.http ?? new FetchHttpClient();
     this.baseUrl = resolveBaseUrl(config).replace(/\/$/, '');
     this.headers = { Authorization: `Bearer ${config.apiToken}` };
@@ -150,13 +152,30 @@ export class PolarBillingClient {
       body,
     });
     if (!response.ok) {
-      throw new PolarApiError(
-        `Polar API ${method} ${path} failed with ${response.status}`,
+      throw new BillingApiError(
+        `Billing API ${method} ${path} failed with ${response.status}`,
         response.status,
         await response.text(),
       );
     }
     return (response.data ?? {}) as T;
+  }
+
+  async createProduct(params: CreateProductParams): Promise<CreatedProduct> {
+    const dto = await this.request<ProductDto>('POST', '/products', {
+      name: params.name,
+      ...(params.description ? { description: params.description } : {}),
+      prices: [
+        {
+          type: 'one_time',
+          amount_type: 'fixed',
+          price_currency: params.currency ?? 'usd',
+          price_amount: params.amountCents,
+        },
+      ],
+      ...(params.metadata ? { metadata: params.metadata } : {}),
+    });
+    return { id: dto.id, name: dto.name ?? params.name };
   }
 
   async createCheckout(params: CheckoutSessionParams): Promise<CheckoutSession> {
@@ -186,17 +205,17 @@ export class PolarBillingClient {
     );
     const url = dto.customer_portal_url;
     if (!url) {
-      throw new PolarApiError('Polar customer portal session returned no URL', 500, JSON.stringify(dto));
+      throw new BillingApiError('Billing customer portal session returned no URL', 500, JSON.stringify(dto));
     }
     return { url };
   }
 
-  async getSubscription(id: string): Promise<PolarSubscriptionRecord> {
+  async getSubscription(id: string): Promise<SubscriptionRecord> {
     const dto = await this.request<SubscriptionDto>('GET', `/subscriptions/${encodeURIComponent(id)}`);
     return mapSubscription(dto);
   }
 
-  async listSubscriptions(filter: { customerId?: string; productId?: string } = {}): Promise<PolarSubscriptionRecord[]> {
+  async listSubscriptions(filter: { customerId?: string; productId?: string } = {}): Promise<SubscriptionRecord[]> {
     const query = new URLSearchParams();
     if (filter.customerId) query.set('customer_id', filter.customerId);
     if (filter.productId) query.set('product_id', filter.productId);
@@ -217,7 +236,7 @@ export class PolarBillingClient {
   async updateSubscription(
     id: string,
     patch: { cancelAtPeriodEnd?: boolean },
-  ): Promise<PolarSubscriptionRecord> {
+  ): Promise<SubscriptionRecord> {
     const body = patch.cancelAtPeriodEnd !== undefined
       ? { cancel_at_period_end: patch.cancelAtPeriodEnd }
       : undefined;

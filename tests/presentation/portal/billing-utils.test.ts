@@ -1,4 +1,3 @@
-/** Tests for the pure billing portal utilities. */
 
 import { describe, it, expect } from 'vitest';
 import type { Invoice, InvoiceStatus, UsageMetric } from '../../../src/presentation/portal/types';
@@ -26,7 +25,7 @@ describe('formatPrice', () => {
   const byLocale = (locale: string, currency: string, majorUnits: number): string =>
     new Intl.NumberFormat(locale, { style: 'currency', currency }).format(majorUnits);
 
-  it('treats the amount as the currency minor unit, as Polar reports it', () => {
+  it('treats the amount as the currency minor unit', () => {
     expect(formatPrice(9900, 'USD')).toBe('$99.00');
     expect(formatPrice(47000, 'EUR')).toBe(byLocale('de-DE', 'EUR', 470));
     expect(formatPrice(0, 'USD')).toBe('$0.00');
@@ -64,11 +63,10 @@ describe('calculateDiscount', () => {
   });
 
   it('returns 0 when yearly is not cheaper', () => {
-    expect(calculateDiscount(10, 240)).toBe(0); // 240/12 = 20 > 10
+    expect(calculateDiscount(10, 240)).toBe(0);
   });
 
   it('computes the yearly discount percentage', () => {
-    // yearly monthly equivalent = 96/12 = 8 → (12-8)/12 = 33%
     expect(calculateDiscount(12, 96)).toBe(33);
   });
 
@@ -222,7 +220,6 @@ describe('label catalog contract', () => {
     expect(merged.tabs.invoices).toBe(DEFAULT_BILLING_LABELS.tabs.invoices);
     expect(merged.status.active).toBe('Aktif');
     expect(merged.status.canceled).toBe(DEFAULT_BILLING_LABELS.status.canceled);
-    // Originals untouched
     expect(DEFAULT_BILLING_LABELS.tabs.overview).toBe('Overview');
     expect(DEFAULT_BILLING_LABELS.status.active).toBe('Active');
   });

@@ -1,9 +1,3 @@
-/**
- * Billing — Overview Tab
- *
- * Shows the current subscription summary, usage metrics, and
- * upcoming invoice. Single responsibility: render overview data.
- */
 
 import { VisualTokens, TONE_PAIRS } from '../../theme/visual-tokens';
 import { useBillingLabels } from '../labels';

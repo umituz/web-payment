@@ -1,10 +1,3 @@
-/**
- * PortalSpinner
- *
- * Dependency-free loading spinner. The rotation is SMIL (`<animateTransform>`)
- * rather than a CSS keyframe, so it animates even in hosts whose stylesheets
- * never load or reset `@keyframes`.
- */
 
 export const PortalSpinner = ({ size = 24 }: { size?: number }) => (
   <svg

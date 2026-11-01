@@ -1,19 +1,3 @@
-/**
- * `<PolarCheckoutButton>` — drop-in CTA for a single product.
- *
- * Renders a button that triggers a checkout for the supplied product.
- * Loading + error states are owned by the component so consumers only
- * supply the product and a label.
- *
- * ```tsx
- * <PolarCheckoutButton
- *   productId="prod_xxx"
- *   billingCycle="monthly"
- *   label="Upgrade to Pro"
- *   variant="primary"
- * />
- * ```
- */
 
 import { useMemo } from 'react';
 import { useCheckoutButton } from '../hooks/useCheckoutButton';
@@ -21,32 +5,30 @@ import type { CheckoutParams } from '../../domain/entities/checkout.entity';
 import { CheckoutButtonVisual } from '../utils/checkout-button-visual';
 import { InlineErrorVisual } from '../utils/inline-error-visual';
 
-export type PolarCheckoutButtonVariant = 'primary' | 'secondary' | 'danger';
+export type CheckoutButtonVariant = 'primary' | 'secondary' | 'danger';
 
-/** User-facing strings — override any subset for localization. */
-export interface PolarCheckoutButtonLabels {
-  /** Shown while the checkout session is being created. */
+export interface CheckoutButtonLabels {
   loading?: string;
 }
 
-export interface PolarCheckoutButtonProps {
+export interface CheckoutButtonProps {
   productId: string;
   billingCycle?: CheckoutParams['billingCycle'];
   successUrl?: string;
   planKey?: string;
   label: string;
-  variant?: PolarCheckoutButtonVariant;
+  variant?: CheckoutButtonVariant;
   disabled?: boolean;
   onError?: (error: Error) => void;
   className?: string;
-  labels?: PolarCheckoutButtonLabels;
+  labels?: CheckoutButtonLabels;
 }
 
-const DEFAULT_LABELS: Required<PolarCheckoutButtonLabels> = Object.freeze({
+const DEFAULT_LABELS: Required<CheckoutButtonLabels> = Object.freeze({
   loading: 'Redirecting…',
 });
 
-export function PolarCheckoutButton({
+export function CheckoutButton({
   productId,
   billingCycle,
   successUrl,
@@ -57,7 +39,7 @@ export function PolarCheckoutButton({
   onError,
   className,
   labels,
-}: PolarCheckoutButtonProps) {
+}: CheckoutButtonProps) {
   const { start, loading, error } = useCheckoutButton({
     productId,
     billingCycle,

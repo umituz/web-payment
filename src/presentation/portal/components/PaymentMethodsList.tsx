@@ -1,10 +1,3 @@
-/**
- * Payment Methods List
- *
- * Manages saved payment methods with a11y semantics and
- * brand-specific card icon styling. Confirmation is inline — the
- * consumer provides onRemove and the two-step confirm happens here.
- */
 
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -23,10 +16,6 @@ import { PortalButton } from './PortalButton';
 import { PortalSpinner } from './PortalSpinner';
 import { alertDanger, mutedText, row, stack, visuallyHidden } from '../styles';
 
-/**
- * Map card brand → gradient. These are brand-accurate literals (Visa blue,
- * Amex cyan…), not theme tokens — each card wears its network's colors.
- */
 const BRAND_GRADIENT: Record<string, string> = {
   visa: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
   mastercard: 'linear-gradient(135deg, #f97316, #ef4444)',
@@ -273,10 +262,6 @@ const PaymentMethodItem = ({
   );
 };
 
-/**
- * A payment method is removable if there is at least one other method
- * left — a user must always have at least one valid payment method.
- */
 const paymentMethodsAllowsRemove = (
   method: PaymentMethod,
   all: PaymentMethod[],

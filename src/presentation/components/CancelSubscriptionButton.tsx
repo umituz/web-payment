@@ -1,10 +1,3 @@
-/**
- * `<CancelSubscriptionButton>` — cancel the active subscription.
- *
- * Prompts the user for a reason (optional) and calls the cancel flow.
- * The parent can override the prompt UX with `renderPrompt` if a custom
- * confirmation dialog is required.
- */
 
 import { useState, type ReactNode } from 'react';
 import { useCancelSubscription } from '../hooks/useCancelSubscription';
@@ -18,32 +11,18 @@ import { VisualTokens } from '../theme/visual-tokens';
 
 export interface CancelSubscriptionButtonProps {
   label?: string;
-  /**
-   * Render a custom confirmation UI. Receives a `confirm(reason)`
-   * callback that the implementation calls to actually perform the
-   * cancel. Return `null` to use the built-in `<select>` prompt.
-   */
   renderPrompt?: (confirm: (reason?: CancellationReason) => void) => ReactNode;
   onSuccess?: () => void;
-  /** Locale-aware reason options; defaults to the built-in catalog. */
   reasonCatalog?: ReadonlyArray<CancellationReasonOption>;
-  /** User-facing strings — override any subset for localization. */
   labels?: CancelSubscriptionButtonLabels;
 }
 
-/** User-facing strings — override any subset for localization. */
 export interface CancelSubscriptionButtonLabels {
-  /** The trigger button label (also settable via the `label` prop). */
   action?: string;
-  /** Confirmation button inside the prompt. */
   confirm?: string;
-  /** Dismiss button inside the prompt. */
   keep?: string;
-  /** Shown while the cancel request is in flight. */
   canceling?: string;
-  /** Title above the reason `<select>`. */
   promptTitle?: string;
-  /** Label of the "no reason" option. */
   noReason?: string;
 }
 

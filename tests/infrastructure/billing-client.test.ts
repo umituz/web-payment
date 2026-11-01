@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { PolarBillingClient } from '../../src/infrastructure/services/polar-billing.client';
-import { PolarApiError } from '../../src/infrastructure/services/polar-product.repository';
+import { BillingClient } from '../../src/infrastructure/services/billing.client';
+import { BillingApiError } from '../../src/infrastructure/services/product.repository';
 import type { HttpClient, HttpRequest, HttpResponse } from '../../src/infrastructure/http/http-client';
 
 function httpClientReturning(data: unknown, status = 200): HttpClient & { calls: HttpRequest[] } {
@@ -20,10 +20,10 @@ function httpClientReturning(data: unknown, status = 200): HttpClient & { calls:
   return Object.assign(client, { calls });
 }
 
-describe('PolarBillingClient', () => {
+describe('BillingClient', () => {
   it('creates a checkout with snake_case body and Bearer auth', async () => {
     const http = httpClientReturning({ id: 'co_1', url: 'https://polar.sh/checkout/co_1', status: 'open' });
-    const client = new PolarBillingClient({ apiToken: 'oat_test', http });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
 
     const checkout = await client.createCheckout({
       productId: 'prod_1',
@@ -45,9 +45,34 @@ describe('PolarBillingClient', () => {
 
   it('targets the sandbox base URL when configured', async () => {
     const http = httpClientReturning({ id: 'co_2', url: 'https://sandbox.polar.sh/checkout/co_2' });
-    const client = new PolarBillingClient({ apiToken: 'oat_test', sandbox: true, http });
+    const client = new BillingClient({ apiToken: 'oat_test', sandbox: true, http });
     await client.createCheckout({ productId: 'prod_1' });
     expect(http.calls[0].url.startsWith('https://sandbox-api.polar.sh/v1')).toBe(true);
+  });
+
+  it('creates a one-time product with a fixed price in cents', async () => {
+    const http = httpClientReturning({ id: 'prod_9', name: 'Ultralight Gear Course' });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
+
+    const product = await client.createProduct({
+      name: 'Ultralight Gear Course',
+      description: 'Six chapters, 4K lessons.',
+      amountCents: 7900,
+      metadata: { creatorId: 'crt_03', productId: 'prd_1' },
+    });
+
+    expect(product).toEqual({ id: 'prod_9', name: 'Ultralight Gear Course' });
+    const call = http.calls[0];
+    expect(call.method).toBe('POST');
+    expect(call.url).toBe('https://api.polar.sh/v1/products');
+    expect(call.body).toEqual({
+      name: 'Ultralight Gear Course',
+      description: 'Six chapters, 4K lessons.',
+      prices: [
+        { type: 'one_time', amount_type: 'fixed', price_currency: 'usd', price_amount: 7900 },
+      ],
+      metadata: { creatorId: 'crt_03', productId: 'prd_1' },
+    });
   });
 
   it('maps a subscription DTO to camelCase', async () => {
@@ -62,7 +87,7 @@ describe('PolarBillingClient', () => {
       customer_id: 'cus_1',
       metadata: { tenant: 'org_1' },
     });
-    const client = new PolarBillingClient({ apiToken: 'oat_test', http });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
     const record = await client.getSubscription('sub_1');
     expect(record).toEqual({
       id: 'sub_1',
@@ -85,7 +110,7 @@ describe('PolarBillingClient', () => {
     const http = httpClientReturning(
       { id: 'sub_1', status: 'active', product_id: 'p', amount: 1, currency: 'usd', cancel_at_period_end: true, customer_id: 'c', metadata: {} },
     );
-    const client = new PolarBillingClient({ apiToken: 'oat_test', http });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
 
     await client.updateSubscription('sub_1', { cancelAtPeriodEnd: true });
     expect(http.calls[0].method).toBe('PATCH');
@@ -98,7 +123,7 @@ describe('PolarBillingClient', () => {
 
   it('creates a portal session and surfaces a missing URL as an error', async () => {
     const http = httpClientReturning({ customer_portal_url: 'https://customer.polar.sh/portal?token=abc' });
-    const client = new PolarBillingClient({ apiToken: 'oat_test', http });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
     const portal = await client.createPortalSession('cus_1', 'https://app.example/billing');
     expect(portal.url).toContain('customer.polar.sh');
     expect(http.calls[0].url).toBe('https://api.polar.sh/v1/customer-sessions');
@@ -108,8 +133,8 @@ describe('PolarBillingClient', () => {
     });
 
     const broken = httpClientReturning({});
-    const failing = new PolarBillingClient({ apiToken: 'oat_test', http: broken });
-    await expect(failing.createPortalSession('cus_1')).rejects.toBeInstanceOf(PolarApiError);
+    const failing = new BillingClient({ apiToken: 'oat_test', http: broken });
+    await expect(failing.createPortalSession('cus_1')).rejects.toBeInstanceOf(BillingApiError);
   });
 
   it('follows subscription list pagination through every page', async () => {
@@ -137,7 +162,7 @@ describe('PolarBillingClient', () => {
         return { status: 200, ok: true, data: page as T, text: async () => JSON.stringify(page) };
       },
     };
-    const client = new PolarBillingClient({ apiToken: 'oat_test', http });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
 
     const records = await client.listSubscriptions({ customerId: 'cus_9' });
 
@@ -146,12 +171,12 @@ describe('PolarBillingClient', () => {
     expect(calls[1].url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9&page=2');
   });
 
-  it('wraps non-2xx responses in PolarApiError with the body attached', async () => {
+  it('wraps non-2xx responses in BillingApiError with the body attached', async () => {
     const http = httpClientReturning({ error: 'not found' }, 404);
-    const client = new PolarBillingClient({ apiToken: 'oat_test', http });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
     const thrown = await client.getCheckout('co_missing').catch((error: unknown) => error);
-    expect(thrown).toBeInstanceOf(PolarApiError);
-    expect((thrown as PolarApiError).status).toBe(404);
-    expect((thrown as PolarApiError).body).toContain('not found');
+    expect(thrown).toBeInstanceOf(BillingApiError);
+    expect((thrown as BillingApiError).status).toBe(404);
+    expect((thrown as BillingApiError).body).toContain('not found');
   });
 });

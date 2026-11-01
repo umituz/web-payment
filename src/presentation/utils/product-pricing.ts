@@ -1,24 +1,10 @@
-/**
- * ProductPricing — picks the right price for a Polar product and
- * computes display labels.
- *
- * Polar products may carry multiple prices (one per interval /
- * currency / amount-type combo). Centralizing the "which price wins"
- * rule keeps the UI consistent and lets tests assert the rule without
- * rendering a component.
- */
 
-import type { BillingCycle, PolarProduct, PolarPrice } from '../../domain/entities';
+import type { BillingCycle, Product, ProductPrice } from '../../domain/entities';
 
 export const FALLBACK_PRICE_LABEL = 'Custom';
 
 export class ProductPricing {
-  /**
-   * Pick the first price that recurs on `cycle`. If the product has no
-   * recurring prices, return the first one. Returns `null` for products
-   * with no prices.
-   */
-  static recurringPrice(product: PolarProduct, cycle?: BillingCycle): PolarPrice | null {
+  static recurringPrice(product: Product, cycle?: BillingCycle): ProductPrice | null {
     const recurring = product.prices.filter(
       (p) => p.recurringInterval !== undefined,
     );
@@ -32,12 +18,8 @@ export class ProductPricing {
     return recurring[0] ?? null;
   }
 
-  /**
-   * Build a "{amount} / {interval}" string. Returns the standalone
-   * amount label when there is no interval.
-   */
   static displayLine(
-    product: PolarProduct,
+    product: Product,
     formatter: (amount: number | undefined, currency: string | undefined) => string,
     cycle?: BillingCycle,
   ): { amount: string; interval: string | null } {

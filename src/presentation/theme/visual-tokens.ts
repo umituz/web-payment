@@ -1,13 +1,3 @@
-/**
- * VisualTokens — centralized design system.
- *
- * Single source of truth for spacing, typography, color, and shape used
- * by every component in the SDK. No raw hex / px / pt values are
- * permitted in component files; consume `VisualTokens` instead.
- *
- * Mirrors the global iOS theme rule: spacing tokens, semantic colors,
- * and a typography scale.
- */
 
 export const VisualTokens = Object.freeze({
   spacing: Object.freeze({

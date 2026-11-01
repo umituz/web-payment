@@ -1,10 +1,3 @@
-/**
- * useBilling
- *
- * Pure state + side-effect container for the billing portal.
- * No mock data, no commented-out API stubs — all persistence
- * goes through the `apiClient` injected via options.
- */
 
 import { useState, useCallback, useMemo } from 'react';
 import type {
@@ -18,10 +11,6 @@ import { DEFAULT_BILLING_CONFIG } from '../constants';
 
 export type { Invoice };
 
-/**
- * API client contract — implementations can be a real fetch wrapper
- * or a test double.
- */
 export interface BillingApiClient {
   loadBilling: () => Promise<BillingSummary>;
   updatePlan: (planId: string) => Promise<void>;
@@ -34,9 +23,7 @@ export interface BillingApiClient {
 }
 
 export interface UseBillingOptions {
-  /** Initial billing data (avoids loading flash on mount) */
   initialData?: BillingSummary;
-  /** API client — required to actually persist mutations */
   apiClient: BillingApiClient;
 }
 
@@ -54,21 +41,11 @@ export interface UseBillingReturn {
   getInvoiceUrl: (invoiceId: string) => Promise<string | null>;
 }
 
-/**
- * Translate a thrown value into a user-facing error message.
- * Non-Error throws are surfaced as a generic message — never
- * as the raw thrown value (which can be a string, object, or symbol).
- */
 const toErrorMessage = (err: unknown, fallback: string): string => {
   if (err instanceof Error && err.message) return err.message;
   return fallback;
 };
 
-/**
- * Wrap an async billing action with the standard
- * isLoading + error contract. Errors are both surfaced to state
- * and re-thrown so the caller can react when needed.
- */
 const executeBillingAction = async <T>(
   setIsLoading: (loading: boolean) => void,
   setError: (message: string | null) => void,
@@ -244,10 +221,6 @@ export function useBilling(options: UseBillingOptions): UseBillingReturn {
   );
 }
 
-/**
- * Convenience factory: creates a no-op API client useful for tests
- * and Storybook. Throws by default so dev mistakes surface fast.
- */
 export const createStubBillingApiClient = (
   overrides?: Partial<BillingApiClient>,
 ): BillingApiClient => {

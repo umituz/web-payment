@@ -8,11 +8,7 @@ import type {
   OrderItem,
 } from '../../domain/entities';
 
-/**
- * The single value exposed by `PolarProvider` to consumers. Adding a method
- * here is a contract change — keep the surface minimal.
- */
-export interface PolarContextValue {
+export interface BillingContextValue {
   status: SubscriptionStatus;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -23,16 +19,12 @@ export interface PolarContextValue {
   getPortalUrl: () => Promise<string>;
 }
 
-export const PolarContext = createContext<PolarContextValue | undefined>(undefined);
+export const BillingContext = createContext<BillingContextValue | undefined>(undefined);
 
-/**
- * Hook-style access to the polar context. Throws when used outside a
- * `PolarProvider` so the failure mode is explicit and immediate.
- */
-export function usePolarBilling(): PolarContextValue {
-  const ctx = useContext(PolarContext);
+export function useBilling(): BillingContextValue {
+  const ctx = useContext(BillingContext);
   if (!ctx) {
-    throw new Error('usePolarBilling must be used within <PolarProvider>');
+    throw new Error('useBilling must be used within <BillingProvider>');
   }
   return ctx;
 }

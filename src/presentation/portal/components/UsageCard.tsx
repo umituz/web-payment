@@ -1,10 +1,3 @@
-/**
- * Usage Card
- *
- * Shows consumption of a metered resource with an accessible progress bar.
- * Surfaces the real percentage (including over-limit) instead of clamping
- * to 100%, so users see when they have actually exceeded their allowance.
- */
 
 import { AlertTriangle, TrendingUp } from 'lucide-react';
 import { VisualTokens, TONE_PAIRS } from '../../theme/visual-tokens';
@@ -150,10 +143,6 @@ interface UsageEvaluation {
   isUnlimited: boolean;
 }
 
-/**
- * Centralized usage evaluation. Returning all flags in one place
- * keeps the JSX above declarative and free of conditionals.
- */
 const evaluateUsage = (metric: UsageCardProps['metric']): UsageEvaluation => {
   if (metric.limit <= 0) {
     return { percentage: 0, isOverLimit: false, nearLimit: false, isUnlimited: true };

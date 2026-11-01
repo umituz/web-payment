@@ -1,11 +1,3 @@
-/**
- * Plan Comparison
- *
- * Configurable plan selection with a true radio-group semantic.
- * The grid is a single radiogroup; each plan card is a radio option.
- * Discount shown in the toggle is derived from calculateDiscount
- * (no hardcoded "17%" — the magic number is gone).
- */
 
 import { Check, X } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -22,10 +14,6 @@ import {
 import { PortalButton } from './PortalButton';
 import { PortalSpinner } from './PortalSpinner';
 
-/**
- * Plan cards are presented as a radio group so assistive tech
- * announces selection state correctly.
- */
 const RADIO_GROUP_NAME = 'plan-comparison';
 
 export const PlanComparison = ({
@@ -161,7 +149,6 @@ interface PlanCardProps {
   showFeatures: boolean;
   loading: boolean;
   onSelect?: (planId: string) => void;
-  /** Roving-tabindex flag: exactly one card per group stays in tab order. */
   tabbable: boolean;
 }
 
@@ -405,10 +392,6 @@ const PlanCard = ({
   );
 };
 
-/**
- * Display the largest discount across all plans on the yearly toggle.
- * Computed from real plan prices — no hardcoded "17%".
- */
 const pickLargestDiscount = (plans: PlanTier[]): number => {
   if (plans.length === 0) return 0;
   return plans.reduce((max, plan) => {
@@ -419,7 +402,4 @@ const pickLargestDiscount = (plans: PlanTier[]): number => {
 
 export default PlanComparison;
 
-/**
- * Exposed for tests / extension.
- */
 export { RADIO_GROUP_NAME };

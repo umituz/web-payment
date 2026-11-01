@@ -4,8 +4,6 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
-  // dist is generated; examples are documentation-only snippets that import
-  // the published package name and do not resolve in this workspace.
   { ignores: ['dist', 'coverage', 'examples', 'node_modules'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,

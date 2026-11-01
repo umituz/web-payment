@@ -1,6 +1,3 @@
-/**
- * Billing Portal Components — barrel
- */
 
 export { BillingPortal } from './BillingPortal';
 export { BillingLayout } from './BillingLayout';

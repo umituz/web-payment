@@ -1,10 +1,3 @@
-/**
- * Normalization utilities.
- *
- * Convert raw vendor strings (Polar statuses, intervals) into the narrow
- * domain enums. The previous `STATUS_MAP` was a 1:1 identity map; we now use
- * a `Set` for membership and fall back to a sane default.
- */
 
 import {
   SUBSCRIPTION_STATUS,

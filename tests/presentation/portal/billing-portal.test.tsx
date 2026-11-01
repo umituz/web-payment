@@ -1,8 +1,3 @@
-// @vitest-environment jsdom
-/**
- * BillingPortal render tests — tab semantics, label overrides and the
- * stub client contract, all without any host design system.
- */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -65,7 +60,6 @@ describe('BillingPortal', () => {
     expect(screen.getByRole('tab', { name: /payment methods/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /invoices/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /^plan$/i })).toBeInTheDocument();
-    // Overview section heading is rendered
     expect(screen.getByText('Current Subscription')).toBeInTheDocument();
   });
 
@@ -105,7 +99,6 @@ describe('BillingPortal', () => {
     );
     expect(screen.getByRole('tab', { name: 'Özet' })).toBeInTheDocument();
     expect(screen.getByText('Mevcut Abonelik')).toBeInTheDocument();
-    // Non-overridden labels keep their defaults
     expect(screen.getByRole('tab', { name: /invoices/i })).toBeInTheDocument();
   });
 });
@@ -124,7 +117,6 @@ describe('PlanComparison', () => {
 
   it('shows the yearly save badge computed from real plan prices', () => {
     render(<PlanComparison plans={plans} cycle="monthly" />);
-    // 12 → 120 yearly = 0%, 29 → 290 = ~17%, 99 → 990 = ~17% → largest = 17
     expect(screen.getByText('Save 17%')).toBeInTheDocument();
   });
 

@@ -1,11 +1,3 @@
-/**
- * CancellationReasonCatalog — the user-facing list of cancellation
- * reasons.
- *
- * Single source of truth for both the dropdown options and the
- * analytics tag mapping. Adding a new reason means adding one entry
- * here, not editing component JSX.
- */
 
 import type { CancellationReason } from '../../domain/entities/cancellation.entity';
 

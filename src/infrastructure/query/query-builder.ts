@@ -1,9 +1,3 @@
-/**
- * QueryBuilder — Builder pattern for URL search params.
- *
- * Replaces hand-rolled `url.searchParams.set(...)` chains with a fluent,
- * type-safe API. The result is a stable URL string the HttpClient can call.
- */
 
 export class QueryBuilder {
   private readonly params: URLSearchParams;

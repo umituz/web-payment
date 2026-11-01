@@ -1,31 +1,17 @@
-/**
- * `<CustomerPortalLink>` — link out to the Polar customer portal.
- *
- * Polar's customer portal lets the user update payment methods,
- * change plan, view invoices, and cancel. This component fetches the
- * URL on demand and navigates.
- */
 
 import { useState } from 'react';
-import { usePolarBilling } from '../context/polar-context';
+import { useBilling } from '../context/billing-context';
 import { InlineErrorVisual } from '../utils/inline-error-visual';
 import { VisualTokens } from '../theme/visual-tokens';
 
 export interface CustomerPortalLinkProps {
   label?: string;
-  /**
-   * `'redirect'` performs a full-page navigation (the portal requires
-   * it for cookie-based session). `'open'` opens in a new tab.
-   */
   target?: 'redirect' | 'open';
   className?: string;
-  /** User-facing strings — override any subset for localization. */
   labels?: CustomerPortalLinkLabels;
 }
 
-/** User-facing strings — override any subset for localization. */
 export interface CustomerPortalLinkLabels {
-  /** Shown while the portal URL is being fetched. */
   loading?: string;
 }
 
@@ -38,7 +24,7 @@ export function CustomerPortalLink({
   className,
   labels,
 }: CustomerPortalLinkProps) {
-  const { getPortalUrl } = usePolarBilling();
+  const { getPortalUrl } = useBilling();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

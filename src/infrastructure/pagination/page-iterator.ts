@@ -1,12 +1,3 @@
-/**
- * PageIterator — Iterator pattern over a paginated remote collection.
- *
- * Fetches pages lazily until the upstream reports it has reached the last
- * page. Stops early on cancellation via the `signal` option.
- *
- * The async iterator protocol (`Symbol.asyncIterator`) keeps the consumer
- * code clean: `for await (const item of iterator) { ... }`.
- */
 
 export interface Page<T> {
   items: T[];

@@ -1,10 +1,3 @@
-/**
- * Polar price amount type enum.
- *
- * Polar.sh returns `amount_type` as an open string. We narrow it to the
- * documented set for type safety while still being explicit about the unknown
- * case via a fallback.
- */
 
 export const POLAR_AMOUNT_TYPE = Object.freeze({
   FIXED: 'fixed',
@@ -14,4 +7,4 @@ export const POLAR_AMOUNT_TYPE = Object.freeze({
   METERED_UNIT: 'metered_unit',
 } as const);
 
-export type PolarAmountType = (typeof POLAR_AMOUNT_TYPE)[keyof typeof POLAR_AMOUNT_TYPE];
+export type AmountType = (typeof POLAR_AMOUNT_TYPE)[keyof typeof POLAR_AMOUNT_TYPE];

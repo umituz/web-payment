@@ -1,10 +1,3 @@
-/**
- * Billing Portal Utilities
- *
- * Pure helpers for the billing view model — no React, no network.
- * Status → tone mapping returns a `VisualTone` (consumed with `TONE_PAIRS`)
- * instead of CSS classes, keeping these functions camp-agnostic.
- */
 
 import type { VisualTone } from '../../theme/visual-tokens';
 import { toMajorUnits } from '../../../domain/utils/minor-units';
@@ -17,24 +10,10 @@ import type {
   UsageMetric,
 } from '../types';
 
-/**
- * Format number with thousand separators
- *
- * @param num - Number to format
- * @param locale - Locale (default: en-US)
- * @returns Formatted number string
- */
 export function formatNumber(num: number, locale: string = 'en-US'): string {
   return new Intl.NumberFormat(locale).format(num);
 }
 
-/**
- * Format a Polar price with its currency symbol
- *
- * @param amount - Amount in the currency's minor unit (cents / whole yen), as Polar reports
- * @param currency - Currency code (default: USD)
- * @returns Formatted price string
- */
 export function formatPrice(amount: number, currency: string = 'USD'): string {
   const localeMap: Record<string, string> = {
     USD: 'en-US',
@@ -50,13 +29,6 @@ export function formatPrice(amount: number, currency: string = 'USD'): string {
   }).format(toMajorUnits(amount, currency));
 }
 
-/**
- * Calculate yearly discount
- *
- * @param monthlyPrice - Monthly price
- * @param yearlyPrice - Yearly price
- * @returns Discount percentage (0 when monthlyPrice is 0 or the yearly price is not cheaper)
- */
 export function calculateDiscount(monthlyPrice: number, yearlyPrice: number): number {
   if (monthlyPrice <= 0) return 0;
   const yearlyMonthly = yearlyPrice / 12;
@@ -64,14 +36,6 @@ export function calculateDiscount(monthlyPrice: number, yearlyPrice: number): nu
   return Math.round(Math.max(discount, 0));
 }
 
-/**
- * Calculate prorated amount
- *
- * @param amount - Full amount
- * @param daysUsed - Days used in period
- * @param totalDays - Total days in period
- * @returns Prorated amount
- */
 export function calculateProratedAmount(
   amount: number,
   daysUsed: number,
@@ -81,40 +45,19 @@ export function calculateProratedAmount(
   return (amount / totalDays) * daysUsed;
 }
 
-/**
- * Get plan price by cycle
- *
- * @param plan - Plan tier
- * @param cycle - Billing cycle
- * @returns Price for cycle
- */
 export function getPlanPrice(plan: PlanTier, cycle: BillingCycle): number {
   return cycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
 }
 
-/**
- * Calculate usage percentage
- *
- * @param metric - Usage metric
- * @returns Usage percentage (0-100)
- */
 export function calculateUsagePercentage(metric: UsageMetric): number {
   if (metric.limit === 0) return 0;
   return Math.min((metric.current / metric.limit) * 100, 100);
 }
 
-/**
- * Check if usage is near limit
- *
- * @param metric - Usage metric
- * @param threshold - Warning threshold (default: 80)
- * @returns Whether near limit
- */
 export function isNearLimit(metric: UsageMetric, threshold: number = 80): boolean {
   return calculateUsagePercentage(metric) >= threshold;
 }
 
-/** Subscription status → semantic tone for badge/text coloring. */
 export function getStatusTone(status: SubscriptionStatus): VisualTone {
   const toneMap: Record<SubscriptionStatus, VisualTone> = {
     active: 'active',
@@ -128,10 +71,6 @@ export function getStatusTone(status: SubscriptionStatus): VisualTone {
   return toneMap[status] ?? 'neutral';
 }
 
-/**
- * English-only status label for non-UI contexts (logs, exports).
- * UI components read `labels.status[status]` instead.
- */
 export function getStatusLabel(status: SubscriptionStatus): string {
   const labelMap: Record<SubscriptionStatus, string> = {
     active: 'Active',
@@ -145,7 +84,6 @@ export function getStatusLabel(status: SubscriptionStatus): string {
   return labelMap[status] || status;
 }
 
-/** Invoice status → semantic tone for badge/text coloring. */
 export function getInvoiceStatusTone(status: InvoiceStatus): VisualTone {
   const toneMap: Record<InvoiceStatus, VisualTone> = {
     draft: 'neutral',
@@ -158,10 +96,6 @@ export function getInvoiceStatusTone(status: InvoiceStatus): VisualTone {
   return toneMap[status] ?? 'neutral';
 }
 
-/**
- * English-only invoice status label for non-UI contexts (logs, exports).
- * UI components read `labels.invoiceStatus[status]` instead.
- */
 export function getInvoiceStatusLabel(status: InvoiceStatus): string {
   const labelMap: Record<InvoiceStatus, string> = {
     draft: 'Draft',
@@ -174,34 +108,14 @@ export function getInvoiceStatusLabel(status: InvoiceStatus): string {
   return labelMap[status] || status;
 }
 
-/**
- * Format card number
- *
- * @param last4 - Last 4 digits
- * @param brand - Card brand
- * @returns Formatted card display
- */
 export function formatCardNumber(last4: string, brand: string): string {
   return `${brand.toUpperCase()} •••• ${last4}`;
 }
 
-/**
- * Format expiry date
- *
- * @param month - Expiry month
- * @param year - Expiry year
- * @returns Formatted expiry (MM/YY)
- */
 export function formatExpiry(month: number, year: number): string {
   return `${String(month).padStart(2, '0')}/${String(year).slice(-2)}`;
 }
 
-/**
- * Calculate remaining days
- *
- * @param endDate - End date string
- * @returns Days remaining
- */
 export function getDaysRemaining(endDate: string): number {
   const end = new Date(endDate);
   const now = new Date();
@@ -209,25 +123,11 @@ export function getDaysRemaining(endDate: string): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-/**
- * Check if trial is expiring soon
- *
- * @param trialEnd - Trial end date
- * @param daysThreshold - Days threshold (default: 7)
- * @returns Whether trial is expiring soon
- */
 export function isTrialExpiringSoon(trialEnd: string, daysThreshold: number = 7): boolean {
   const daysRemaining = getDaysRemaining(trialEnd);
   return daysRemaining > 0 && daysRemaining <= daysThreshold;
 }
 
-/**
- * Calculate next billing date
- *
- * @param currentPeriodEnd - Current period end
- * @param cycle - Billing cycle
- * @returns Next billing date
- */
 export function getNextBillingDate(currentPeriodEnd: string, cycle: BillingCycle): Date {
   const nextDate = new Date(currentPeriodEnd);
 
@@ -240,12 +140,6 @@ export function getNextBillingDate(currentPeriodEnd: string, cycle: BillingCycle
   return nextDate;
 }
 
-/**
- * Group invoices by status
- *
- * @param invoices - Array of invoices
- * @returns Grouped invoices map — every InvoiceStatus key is always present
- */
 export function groupInvoicesByStatus(invoices: Invoice[]): Record<InvoiceStatus, Invoice[]> {
   const grouped: Record<InvoiceStatus, Invoice[]> = {
     draft: [],
@@ -263,25 +157,11 @@ export function groupInvoicesByStatus(invoices: Invoice[]): Record<InvoiceStatus
   return grouped;
 }
 
-/**
- * Calculate total invoice amount
- *
- * @param invoices - Array of invoices
- * @param status - Optional status filter
- * @returns Total amount
- */
 export function calculateInvoiceTotal(invoices: Invoice[], status?: InvoiceStatus): number {
   const filtered = status ? invoices.filter((inv) => inv.status === status) : invoices;
   return filtered.reduce((sum, inv) => sum + inv.amount, 0);
 }
 
-/**
- * Sort invoices by date
- *
- * @param invoices - Array of invoices
- * @param order - Sort order (default: desc)
- * @returns Sorted invoices
- */
 export function sortInvoicesByDate(invoices: Invoice[], order: 'asc' | 'desc' = 'desc'): Invoice[] {
   return [...invoices].sort((a, b) => {
     const dateA = new Date(a.date).getTime();
@@ -290,12 +170,6 @@ export function sortInvoicesByDate(invoices: Invoice[], order: 'asc' | 'desc' = 
   });
 }
 
-/**
- * Format feature list item
- *
- * @param feature - Feature item (string or object)
- * @returns Formatted feature
- */
 export function formatFeature(
   feature: string | { text: string; bold?: boolean; included?: boolean },
 ): { text: string; bold?: boolean; included?: boolean } {
@@ -305,24 +179,11 @@ export function formatFeature(
   return feature;
 }
 
-/**
- * Check if plan is popular
- *
- * @param plan - Plan tier
- * @param plans - All available plans
- * @returns Whether plan is popular (middle tier)
- */
 export function isPopularPlan(plan: PlanTier, plans: PlanTier[]): boolean {
   const middleIndex = Math.floor(plans.length / 2);
   return plans[middleIndex]?.id === plan.id;
 }
 
-/**
- * Generate trial days text (English — prefer `labels` for localized UI)
- *
- * @param trialEnd - Trial end date
- * @returns Days remaining text
- */
 export function getTrialDaysText(trialEnd: string): string {
   const days = getDaysRemaining(trialEnd);
 

@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
   mapProduct,
   mapProductList,
-  type PolarProductDto,
+  type ProductDto,
 } from '../../src/domain/mappers/product.mapper';
 import {
   FREE_SUBSCRIPTION_STATUS,
   isActiveSubscription,
 } from '../../src/domain/entities/subscription.entity';
 
-const productDto: PolarProductDto = {
+const productDto: ProductDto = {
   id: 'prod_123',
   name: 'Pro Üyelik ✨',
   description: null,
@@ -43,7 +43,7 @@ describe('mapProduct', () => {
 
     expect(product.id).toBe('prod_123');
     expect(product.isRecurring).toBe(true);
-    expect(product.recurringInterval).toBe('monthly'); // legacy 'month' normalized
+    expect(product.recurringInterval).toBe('monthly');
     expect(product.organizationId).toBe('org_1');
     expect(product.createdAt).toBe('2026-01-15T10:00:00Z');
     expect(product.prices[0]?.amountType).toBe('fixed');
@@ -71,10 +71,7 @@ describe('mapProduct', () => {
   });
 
   it('defends against missing prices/benefits arrays', () => {
-    // Deliberately malformed wire data (the DTO type rightly forbids it);
-    // the mapper must still cope at runtime. `as unknown as` marks the
-    // intentional boundary — see product.mapper guards.
-    const malformed = { ...productDto, prices: undefined, benefits: undefined } as unknown as PolarProductDto;
+    const malformed = { ...productDto, prices: undefined, benefits: undefined } as unknown as ProductDto;
     const product = mapProduct(malformed);
     expect(product.prices).toEqual([]);
     expect(product.benefits).toEqual([]);
@@ -109,7 +106,6 @@ describe('mapProductList', () => {
   });
 
   it('tolerates a missing pagination object', () => {
-    // Malformed wire data on purpose — pagination is required by the DTO type.
     const malformed = { items: [], pagination: undefined } as unknown as Parameters<typeof mapProductList>[0];
     const list = mapProductList(malformed);
     expect(list.pagination).toEqual({ totalCount: 0, maxPage: 1 });

@@ -1,45 +1,27 @@
-/**
- * PolarBillingPage — the turnkey composition of the billing portal over a
- * `PolarAdapter`. Data (useBilling), mutations (checkout / cancel / hosted
- * portal), plan selection and the tabbed portal UI are all wired here;
- * hosts provide the adapter, the server-fetched product catalog and the
- * brand config — nothing else.
- *
- * The cycle toggle is a view state: the chosen cycle is carried into the
- * checkout that plan selection starts.
- */
 
 import { useEffect, useMemo, useState } from 'react';
-import type { PolarAdapter } from '../../../domain/interfaces';
-import type { BillingCycle } from '../../../domain/entities';
-import type { PolarProduct } from '../../../domain/entities';
-import { NoopNavigationStrategy } from '../../navigation/navigation.strategy';
-import type { NavigationStrategy } from '../../navigation/navigation.strategy';
-import { useBilling } from '../hooks';
-import { BillingPage, PlanComparison, PortalButton, PortalSpinner } from '../components';
-import { transformPolarProducts } from '../utils';
-import type { BillingLabelsOverrides } from '../labels';
-import type { BillingConfig, PlanTier } from '../types';
-import { createPolarPortalClient } from './create-polar-portal';
+import type { BillingAdapter } from '../../domain/interfaces';
+import type { BillingCycle } from '../../domain/entities';
+import type { Product } from '../../domain/entities';
+import { NoopNavigationStrategy } from '../navigation/navigation.strategy';
+import type { NavigationStrategy } from '../navigation/navigation.strategy';
+import { useBilling } from './hooks';
+import { BillingPage, PlanComparison, PortalButton, PortalSpinner } from './components';
+import { transformProducts } from './utils';
+import type { BillingLabelsOverrides } from './labels';
+import type { BillingConfig, PlanTier } from './types';
+import { createPortalClient } from './create-portal-client';
 
-export interface PolarBillingPageProps {
-  adapter: PolarAdapter;
-  /** Server-fetched product catalog (never shipped with a token). */
-  products: PolarProduct[];
-  /** Branding — brandName is required, plans default to the catalog. */
+export interface TurnkeyBillingPageProps {
+  adapter: BillingAdapter;
+  products: Product[];
   config: Omit<BillingConfig, 'plans'> & { plans?: PlanTier[] };
-  /** Acting user/tenant id — forwarded to every adapter call. */
   userId?: string;
-  /** Cycle used when a checkout carries none. Default `monthly`. */
   defaultCycle?: BillingCycle;
-  /** Checkout return URL; `{CHECKOUT_ID}` templating supported. */
   successUrl?: string;
-  /** Redirect strategy — defaults to `window.location` in browsers. */
   navigation?: NavigationStrategy;
   locale?: string;
-  /** User-facing strings — override any subset for localization. */
   labels?: BillingLabelsOverrides;
-  /** Called when a checkout or portal redirect fails before navigating. */
   onError?: (error: Error) => void;
 }
 
@@ -52,7 +34,7 @@ function browserNavigation(): NavigationStrategy {
   };
 }
 
-export function PolarBillingPage({
+export function TurnkeyBillingPage({
   adapter,
   products,
   config,
@@ -63,13 +45,13 @@ export function PolarBillingPage({
   locale,
   labels,
   onError,
-}: PolarBillingPageProps) {
+}: TurnkeyBillingPageProps) {
   const [cycle, setCycle] = useState<BillingCycle>(defaultCycle ?? 'monthly');
   const [selecting, setSelecting] = useState(false);
 
   const client = useMemo(
     () =>
-      createPolarPortalClient({
+      createPortalClient({
         adapter,
         products,
         ...(userId !== undefined ? { userId } : {}),
@@ -86,7 +68,7 @@ export function PolarBillingPage({
     void loadBilling();
   }, [loadBilling]);
 
-  const plans = config.plans ?? transformPolarProducts(products);
+  const plans = config.plans ?? transformProducts(products);
 
   const selectPlan = async (productId: string) => {
     setSelecting(true);

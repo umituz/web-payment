@@ -1,10 +1,3 @@
-/**
- * Input validation utilities.
- *
- * Pure predicates for the inputs the SDK accepts from callers. Lives in its
- * own module (no security policy, no formatting) so it can be reused by both
- * the React provider and the service layer.
- */
 
 export function normalizeUserId(userId: string | undefined): string | undefined {
   if (typeof userId !== 'string') return undefined;

@@ -1,22 +1,16 @@
-/**
- * `@umituz/web-polar-payment/products` — Polar.sh product catalog API.
- *
- * Requires a Polar access token. Tokens grant full account access — use
- * from a server / edge function or a development build only.
- */
 
 export {
-  PolarProductRepository,
-  PolarApiError,
-  isPolarApiError,
+  ProductRepository,
+  BillingApiError,
+  isBillingApiError,
   getProducts,
   getProductById,
   getAllProducts,
-} from './infrastructure/services/polar-product.repository';
+} from './infrastructure/services/product.repository';
 export type {
-  PolarApiConfig,
-  PolarRequestOptions,
-} from './infrastructure/services/polar-product.repository';
+  ProductApiConfig,
+  ProductRequestOptions,
+} from './infrastructure/services/product.repository';
 
 export { FetchHttpClient } from './infrastructure/http/http-client';
 export type {

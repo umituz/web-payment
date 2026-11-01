@@ -3,20 +3,20 @@
 Polar.sh subscription billing SDK with an HTTP adapter, a turnkey billing
 portal and React bindings.
 
-The SDK is split into an **adapter-agnostic core** (`PolarAdapter` contract)
-and a **React presentation layer** (`PolarProvider`, `usePolarBilling`).
+The SDK is split into an **adapter-agnostic core** (`BillingAdapter` contract)
+and a **React presentation layer** (`BillingProvider`, `useBilling`).
 The HTTP adapter binds the contract to your own API; any other backend can
 be plugged in by implementing the same interface.
 
 ## Features
 
-- Adapter-agnostic core (`PolarAdapter` interface)
+- Adapter-agnostic core (`BillingAdapter` interface)
 - HTTP adapter for your own REST backend (`createHttpAdapter`)
 - Polar.sh product catalog (`getProducts`, `getProductById`, `getAllProducts`)
-- React provider + hooks (`PolarProvider`, `usePolarBilling`, `usePolarProducts`)
+- React provider + hooks (`BillingProvider`, `useBilling`, `useProducts`)
 - Ready-made UI: pricing table, checkout button, status badge, billing
   history, customer portal link, cancel flow — all localizable
-- Turnkey billing portal page (`PolarBillingPage`)
+- Turnkey billing portal page (`TurnkeyBillingPage`)
 - Strongly-typed domain models, abortable I/O
 
 ## Installation
@@ -43,27 +43,27 @@ Each surface pulls in only its own dependencies — importing `/react`
 never loads server code, importing `/core` loads nothing at all:
 
 ```ts
-// Pure domain — types, enums, mappers, the PolarAdapter contract
+// Pure domain — types, enums, mappers, the BillingAdapter contract
 import { BILLING_CYCLE, parseBillingCycle, mapProduct } from '@umituz/web-polar-payment/core';
 
 // Polar.sh product catalog over a pluggable HttpClient
-import { PolarProductRepository, FetchHttpClient } from '@umituz/web-polar-payment/products';
+import { ProductRepository, FetchHttpClient } from '@umituz/web-polar-payment/products';
 
 // React layer: provider, hooks, components, theme tokens
-import { PolarProvider, PricingTable } from '@umituz/web-polar-payment/react';
+import { BillingProvider, PricingTable } from '@umituz/web-polar-payment/react';
 
 // Server-side Polar.sh operations: checkout sessions, customer portal,
 // subscription management, webhook signature verification (server only!)
-import { PolarBillingClient, verifyPolarWebhook } from '@umituz/web-polar-payment/server';
+import { BillingClient, verifyWebhook } from '@umituz/web-polar-payment/server';
 
-// Browser PolarAdapter over your own REST endpoints
+// Browser BillingAdapter over your own REST endpoints
 import { createHttpAdapter } from '@umituz/web-polar-payment/http';
 
 // Turnkey billing portal page over any adapter
-import { PolarBillingPage } from '@umituz/web-polar-payment/portal';
+import { TurnkeyBillingPage } from '@umituz/web-polar-payment/portal';
 
 // Root entry = everything above (backwards-compatible import paths)
-import { usePolarBilling } from '@umituz/web-polar-payment';
+import { useBilling } from '@umituz/web-polar-payment';
 ```
 
 ## Usage
@@ -71,7 +71,7 @@ import { usePolarBilling } from '@umituz/web-polar-payment';
 ### 1. Wrap the app
 
 ```tsx
-import { PolarProvider, createHttpAdapter } from '@umituz/web-polar-payment';
+import { BillingProvider, createHttpAdapter } from '@umituz/web-polar-payment';
 
 const adapter = createHttpAdapter({
   baseUrl: '/api/billing',
@@ -80,9 +80,9 @@ const adapter = createHttpAdapter({
 
 function App({ userId, children }) {
   return (
-    <PolarProvider adapter={adapter} userId={userId}>
+    <BillingProvider adapter={adapter} userId={userId}>
       {children}
-    </PolarProvider>
+    </BillingProvider>
   );
 }
 ```
@@ -90,10 +90,10 @@ function App({ userId, children }) {
 ### 2. Read subscription state
 
 ```tsx
-import { usePolarBilling } from '@umituz/web-polar-payment';
+import { useBilling } from '@umituz/web-polar-payment';
 
 function PlanBadge() {
-  const { status, loading } = usePolarBilling();
+  const { status, loading } = useBilling();
   if (loading) return null;
   return <span>{status.plan}</span>;
 }
@@ -102,10 +102,10 @@ function PlanBadge() {
 ### 3. Start a checkout
 
 ```tsx
-import { usePolarBilling } from '@umituz/web-polar-payment';
+import { useBilling } from '@umituz/web-polar-payment';
 
 function UpgradeButton({ productId }) {
-  const { startCheckout } = usePolarBilling();
+  const { startCheckout } = useBilling();
   return (
     <button onClick={() => startCheckout({ productId, billingCycle: 'monthly' })}>
       Upgrade
@@ -114,14 +114,14 @@ function UpgradeButton({ productId }) {
 }
 ```
 
-### 4. Sync after a Polar redirect
+### 4. Sync after a checkout redirect
 
 ```tsx
 import { useEffect } from 'react';
-import { usePolarBilling } from '@umituz/web-polar-payment';
+import { useBilling } from '@umituz/web-polar-payment';
 
 function CheckoutReturn() {
-  const { syncSubscription } = usePolarBilling();
+  const { syncSubscription } = useBilling();
   useEffect(() => {
     void syncSubscription();
   }, [syncSubscription]);
@@ -131,7 +131,7 @@ function CheckoutReturn() {
 
 ### 5. Pricing table — the secure pattern
 
-Fetch products **on your server** and pass them down; no Polar token ever
+Fetch products **on your server** and pass them down; no access token ever
 reaches the browser bundle:
 
 ```tsx
@@ -171,35 +171,50 @@ work with the two transport entry points:
 
 ```ts
 // api/billing.ts — server side
-import { PolarBillingClient, verifyPolarWebhook } from '@umituz/web-polar-payment/server';
+import {
+  BillingClient,
+  verifyWebhook,
+  parseWebhookEvent,
+  asCheckoutCompleted,
+} from '@umituz/web-polar-payment/server';
 
-const polar = new PolarBillingClient({
+const billing = new BillingClient({
   apiToken: env.POLAR_ACCESS_TOKEN!,     // OAT token, server only
   sandbox: env.POLAR_SANDBOX === 'true', // sandbox-api.polar.sh
 });
 
 // Checkout: POST /v1/checkouts — metadata is copied onto the subscription
-const checkout = await polar.createCheckout({
+const checkout = await billing.createCheckout({
   productId,
   successUrl: `${appUrl}/billing/return?checkout_id={CHECKOUT_ID}`,
   customerId,
   metadata: { organizationId },
 });
 
+// One-time products (digital goods): POST /v1/products with a fixed price
+const product = await billing.createProduct({
+  name: 'Ultralight Gear Course',
+  amountCents: 7900, // smallest currency unit
+  metadata: { creatorId },
+});
+
 // Managed billing portal (payment methods, invoices, cancellation)
-const { url } = await polar.createPortalSession(customerId, appUrl);
+const { url } = await billing.createPortalSession(customerId, appUrl);
 
 // Cancel at period end (reversible) vs revoke (immediate)
-await polar.updateSubscription(subscriptionId, { cancelAtPeriodEnd: true });
+await billing.updateSubscription(subscriptionId, { cancelAtPeriodEnd: true });
 
 // Webhooks: Standard Webhooks spec — verify the RAW body, before JSON.parse
 const raw = await request.text();
-if (!(await verifyPolarWebhook(raw, request.headers, env.POLAR_WEBHOOK_SECRET))) {
+if (!(await verifyWebhook(raw, request.headers, env.POLAR_WEBHOOK_SECRET))) {
   return new Response('invalid signature', { status: 401 });
 }
+// Then parse the (still raw) body into a typed event view
+const event = parseWebhookEvent(raw);
+const sale = event && asCheckoutCompleted(event); // null unless checkout.completed
 ```
 
-The browser side binds the same `PolarAdapter` contract to six endpoints under
+The browser side binds the same `BillingAdapter` contract to six endpoints under
 one base path — implement them on your worker to match:
 
 ```ts
@@ -221,31 +236,31 @@ a non-2xx status; the adapter surfaces it as `Error("detail (HTTP status)")`.
 
 ### 8. Turnkey billing page — `./portal` over any adapter
 
-`PolarBillingPage` composes the whole portal (plan comparison, subscription
-tabs, invoices, hosted-portal payment methods) over a `PolarAdapter`. The
+`TurnkeyBillingPage` composes the whole portal (plan comparison, subscription
+tabs, invoices, hosted-portal payment methods) over a `BillingAdapter`. The
 host binds the adapter and the server-fetched catalog; everything else —
 data loading, checkout redirects, cancellation — is wired inside:
 
 ```tsx
-import { PolarBillingPage } from '@umituz/web-polar-payment/portal';
+import { TurnkeyBillingPage } from '@umituz/web-polar-payment/portal';
 import { createHttpAdapter } from '@umituz/web-polar-payment/http';
 
 // products: fetched from your server (metadata.planId tags plan keys)
-<PolarBillingPage
+<TurnkeyBillingPage
   adapter={createHttpAdapter({ baseUrl: '/api/billing', getUserId: () => orgId })}
   products={products}
   config={{ brandName: 'Acme', supportEmail: 'billing@acme.dev' }}
 />
 ```
 
-Prefer composing yourself? `createPolarPortalClient({ adapter, products })`
+Prefer composing yourself? `createPortalClient({ adapter, products })`
 returns the portal's `BillingApiClient` seam (plus `selectPlan` /
 `openPortal`) for direct use with `useBilling`.
 
 ## Error handling
 
-Server-side failures throw `PolarApiError` with the HTTP `status` and the
-raw `body` attached — check with `isPolarApiError(error)`. Browser-side
+Server-side failures throw `BillingApiError` with the HTTP `status` and the
+raw `body` attached — check with `isBillingApiError(error)`. Browser-side
 adapter failures surface as plain `Error` values carrying the endpoint's
 `{ "error": ... }` envelope detail and the HTTP status.
 
@@ -257,20 +272,20 @@ src/
 ├── domain/                       # Pure types + interfaces (no I/O)
 │   ├── entities/                 #   Subscription, Checkout, Order, ...
 │   ├── enums/                    #   SubscriptionStatus, BillingCycle, ...
-│   ├── interfaces/               #   PolarAdapter contract
+│   ├── interfaces/               #   BillingAdapter contract
 │   ├── utils/                    #   minor-unit money math
 │   └── mappers/                  #   snake_case DTO → camelCase domain
 ├── infrastructure/               # Transport, repositories, utilities
 │   ├── http/                     #   HttpClient (Strategy, AbortSignal-aware)
 │   ├── query/                    #   QueryBuilder (Builder)
 │   ├── pagination/               #   PageIterator (Iterator)
-│   ├── services/                 #   PolarProductRepository, PolarBillingClient,
+│   ├── services/                 #   ProductRepository, BillingClient,
 │   │   └── http/                 #   createHttpAdapter (six-endpoint contract)
-│   ├── constants/                #   SUBSCRIPTION_STATUS, Polar API base
+│   ├── constants/                #   SUBSCRIPTION_STATUS, API base URL
 │   └── utils/                    #   validation, security, type-guards
 └── presentation/                 # React layer
-    ├── context/                  #   PolarContext (race-safe refresh)
-    ├── hooks/                    #   usePolarBilling, usePolarProducts
+    ├── context/                  #   BillingContext (race-safe refresh)
+    ├── hooks/                    #   useBilling, useProducts
     ├── navigation/               #   NavigationStrategy
     ├── portal/                   #   Turnkey billing portal (page + client)
     ├── theme/                    #   VisualTokens (self-contained)
@@ -279,12 +294,12 @@ src/
 
 ### Patterns in use
 
-- **Adapter** — `PolarAdapter` interface, HTTP implementation
+- **Adapter** — `BillingAdapter` interface, HTTP implementation
 - **Repository** — one repository per business operation
 - **Strategy** — `HttpClient` (swap `fetch` for tests), `NavigationStrategy`
 - **Builder** — `QueryBuilder` for URL search params
 - **Iterator** — `PageIterator` for paginated Polar.sh lists
-- **Error as a value** — `PolarApiError` carries status + raw body
+- **Error as a value** — `BillingApiError` carries status + raw body
 
 ### Design decisions
 
@@ -298,7 +313,7 @@ src/
 - **Localization via prop injection, not an i18n framework** — `labels`
   objects with English defaults keep the runtime dependency-free while
   still allowing full translation.
-- **Optimistic-free state**: `PolarProvider` serializes refreshes behind a
+- **Optimistic-free state**: `BillingProvider` serializes refreshes behind a
   generation counter; a slow earlier response can never overwrite a newer
   one.
 

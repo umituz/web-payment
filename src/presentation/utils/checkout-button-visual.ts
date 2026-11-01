@@ -1,18 +1,9 @@
-/**
- * CheckoutButtonVisual — computes the inline style for a
- * `<PolarCheckoutButton>` based on the chosen variant and disabled /
- * loading state.
- *
- * Pulled out of the component so the same styling can be reused for
- * custom CTAs (e.g. hero upgrade buttons) without forking the
- * component.
- */
 
 import { VisualTokens } from '../theme/visual-tokens';
-import type { PolarCheckoutButtonVariant } from '../components/PolarCheckoutButton';
+import type { CheckoutButtonVariant } from '../components/CheckoutButton';
 
 export interface CheckoutButtonVisualInput {
-  variant: PolarCheckoutButtonVariant;
+  variant: CheckoutButtonVariant;
   disabled: boolean;
   loading: boolean;
 }
@@ -23,7 +14,7 @@ interface ButtonColorScheme {
   border: string;
 }
 
-const VARIANT_COLOR_SCHEMES: Readonly<Record<PolarCheckoutButtonVariant, ButtonColorScheme>> = Object.freeze({
+const VARIANT_COLOR_SCHEMES: Readonly<Record<CheckoutButtonVariant, ButtonColorScheme>> = Object.freeze({
   primary: Object.freeze({
     backgroundColor: VisualTokens.color.brandPrimary,
     color: VisualTokens.color.textOnPrimary,

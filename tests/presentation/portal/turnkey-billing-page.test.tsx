@@ -1,26 +1,19 @@
-// @vitest-environment jsdom
-/**
- * PolarBillingPage — the turnkey portal page. Covers the mount-load
- * contract (billing arrives without any user interaction), the retry
- * affordance after a failed initial load, and minor-unit price
- * rendering for the catalog Polar reports in cents.
- */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PolarBillingPage } from '../../../src/presentation/portal/polar/PolarBillingPage';
+import { TurnkeyBillingPage } from '../../../src/presentation/portal/TurnkeyBillingPage';
 import { NoopNavigationStrategy } from '../../../src/presentation/navigation/navigation.strategy';
-import type { PolarAdapter } from '../../../src/domain/interfaces';
+import type { BillingAdapter } from '../../../src/domain/interfaces';
 import type {
   CancelResult,
   CheckoutResult,
   OrderItem,
-  PolarProduct,
+  Product,
   SubscriptionStatus,
   SyncResult,
 } from '../../../src/domain/entities';
 
-function makeAdapter(overrides: Partial<PolarAdapter> = {}): PolarAdapter {
+function makeAdapter(overrides: Partial<BillingAdapter> = {}): BillingAdapter {
   return {
     getStatus: vi.fn(async (): Promise<SubscriptionStatus> => ({
       plan: 'plan_pro',
@@ -29,7 +22,7 @@ function makeAdapter(overrides: Partial<PolarAdapter> = {}): PolarAdapter {
       cancelAtPeriodEnd: false,
       currentPeriodEnd: '2026-11-01T00:00:00Z',
       billingCycle: 'monthly',
-      polarCustomerId: 'cus_1',
+      providerCustomerId: 'cus_1',
     })),
     createCheckout: vi.fn(async (): Promise<CheckoutResult> => ({ url: 'https://polar.sh/checkout/co_1', id: 'co_1' })),
     syncSubscription: vi.fn(async (): Promise<SyncResult> => ({ synced: true })),
@@ -40,7 +33,7 @@ function makeAdapter(overrides: Partial<PolarAdapter> = {}): PolarAdapter {
   };
 }
 
-const PRODUCTS: PolarProduct[] = [
+const PRODUCTS: Product[] = [
   {
     id: 'prod_pro',
     name: 'Professional',
@@ -60,9 +53,9 @@ const PRODUCTS: PolarProduct[] = [
   },
 ];
 
-function renderPage(adapter: PolarAdapter) {
+function renderPage(adapter: BillingAdapter) {
   return render(
-    <PolarBillingPage
+    <TurnkeyBillingPage
       adapter={adapter}
       products={PRODUCTS}
       config={{ brandName: 'Acme', supportEmail: 'billing@acme.test' }}
@@ -71,7 +64,7 @@ function renderPage(adapter: PolarAdapter) {
   );
 }
 
-describe('PolarBillingPage', () => {
+describe('TurnkeyBillingPage', () => {
   it('loads billing on mount without any user interaction', async () => {
     const adapter = makeAdapter();
     renderPage(adapter);
@@ -80,7 +73,7 @@ describe('PolarBillingPage', () => {
     expect(await screen.findByText('Current Subscription')).toBeInTheDocument();
   });
 
-  it('renders prices from Polar minor units (99,00 not 9.900)', async () => {
+  it('renders prices from minor units (99,00 not 9.900)', async () => {
     renderPage(makeAdapter());
 
     await screen.findByText('Current Subscription');

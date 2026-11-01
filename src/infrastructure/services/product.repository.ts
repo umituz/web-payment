@@ -1,18 +1,7 @@
-/**
- * PolarProductRepository — Repository pattern over the Polar.sh products API.
- *
- * Responsibilities (single):
- *   - Build authenticated requests to Polar.sh
- *   - Map the snake_case DTOs to the canonical camelCase domain entities
- *   - Surface clean errors for non-2xx responses
- *
- * Depends only on `HttpClient` (Strategy) and the product mapper. It does
- * NOT know about React or any other transport.
- */
 
 import {
-  POLAR_API_BASE_URL,
-  POLAR_API_MAX_PAGE_SIZE,
+  API_BASE_URL,
+  API_MAX_PAGE_SIZE,
 } from '../constants/billing.constants';
 import { HttpClient } from '../http/http-client';
 import { FetchHttpClient } from '../http/http-client';
@@ -22,68 +11,57 @@ import { PaginationClamp } from '../utils/pagination-clamp';
 import {
   mapProduct,
   mapProductList,
-  type PolarProduct,
-  type PolarProductDto,
+  type Product,
+  type ProductDto,
   type ProductListParams,
   type ProductListResponse,
 } from '../../domain/mappers/product.mapper';
 
-export interface PolarApiConfig {
+export interface ProductApiConfig {
   apiToken: string;
   baseUrl?: string;
 }
 
-/** Options shared by the request-performing methods. */
-export interface PolarRequestOptions {
-  /** Aborts the request (and any follow-up pages) when fired. */
+export interface ProductRequestOptions {
   signal?: AbortSignal;
-  /** Request budget in ms; defaults to the HTTP client's 15s. */
   timeoutMs?: number;
 }
 
-export class PolarApiError extends Error {
+export class BillingApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
     public readonly body?: string,
   ) {
     super(message);
-    this.name = 'PolarApiError';
-    Object.setPrototypeOf(this, PolarApiError.prototype);
+    this.name = 'BillingApiError';
+    Object.setPrototypeOf(this, BillingApiError.prototype);
   }
 }
 
-/** Type guard: narrows an unknown thrown value to a Polar API error. */
-export function isPolarApiError(error: unknown): error is PolarApiError {
-  return error instanceof PolarApiError;
+export function isBillingApiError(error: unknown): error is BillingApiError {
+  return error instanceof BillingApiError;
 }
 
 interface RawProductPage {
-  items: PolarProductDto[];
+  items: ProductDto[];
   pagination: { total_count: number; max_page: number };
 }
 
-export class PolarProductRepository {
+export class ProductRepository {
   private readonly http: HttpClient;
   private readonly apiToken: string;
   private readonly baseUrl: string;
 
-  constructor(config: PolarApiConfig, http: HttpClient = new FetchHttpClient()) {
+  constructor(config: ProductApiConfig, http: HttpClient = new FetchHttpClient()) {
     this.http = http;
     this.apiToken = config.apiToken;
-    this.baseUrl = config.baseUrl ?? POLAR_API_BASE_URL;
+    this.baseUrl = config.baseUrl ?? API_BASE_URL;
   }
 
-  /**
-   * List products (one page).
-   *
-   * @param params - Filter + pagination
-   * @param options - Transport options (e.g. `signal` for cancellation)
-   * @returns A single page of products in domain form
-   */
   async list(
     params?: ProductListParams,
-    options?: PolarRequestOptions,
+    options?: ProductRequestOptions,
   ): Promise<ProductListResponse> {
     const query = new QueryBuilder({
       organization_id: params?.organizationId,
@@ -103,8 +81,8 @@ export class PolarProductRepository {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new PolarApiError(
-        `Polar API error: ${response.status}`,
+      throw new BillingApiError(
+        `Billing API error: ${response.status}`,
         response.status,
         body,
       );
@@ -113,16 +91,13 @@ export class PolarProductRepository {
     return mapProductList(response.data);
   }
 
-  /**
-   * Fetch a single product by ID, or `null` if Polar returns 404.
-   */
   async findById(
     productId: string,
-    options?: PolarRequestOptions,
-  ): Promise<PolarProduct | null> {
+    options?: ProductRequestOptions,
+  ): Promise<Product | null> {
     const url = `${this.baseUrl}/products/${encodeURIComponent(productId)}`;
 
-    const response = await this.http.request<PolarProductDto>({
+    const response = await this.http.request<ProductDto>({
       method: 'GET',
       url,
       headers: this.authHeaders(),
@@ -133,16 +108,16 @@ export class PolarProductRepository {
     if (response.status === 404) return null;
     if (!response.ok) {
       const body = await response.text();
-      throw new PolarApiError(
-        `Polar API error: ${response.status}`,
+      throw new BillingApiError(
+        `Billing API error: ${response.status}`,
         response.status,
         body,
       );
     }
 
     if (!response.data) {
-      throw new PolarApiError(
-        'Polar API returned an empty product body',
+      throw new BillingApiError(
+        'Billing API returned an empty product body',
         response.status,
       );
     }
@@ -150,24 +125,18 @@ export class PolarProductRepository {
     return mapProduct(response.data);
   }
 
-  /**
-   * Iterate every product matching the filter (auto-paginated).
-   *
-   * Cancellation: pass an `AbortSignal` to stop early — both between pages
-   * and in-flight via the transport.
-   */
   iterateAll(
     params?: Omit<ProductListParams, 'page' | 'limit'>,
     options: { limit?: number; signal?: AbortSignal } = {},
-  ): AsyncIterable<PolarProduct> {
+  ): AsyncIterable<Product> {
     const limit = this.clampLimit(options.limit);
-    const fetcher: PageFetcher<PolarProduct> = {
+    const fetcher: PageFetcher<Product> = {
       fetchPage: async (page, pageLimit) => {
         const response = await this.list(
           { ...params, page, limit: pageLimit },
           { signal: options.signal },
         );
-        const pageData: Page<PolarProduct> = {
+        const pageData: Page<Product> = {
           items: response.items,
           page,
           totalCount: response.pagination.totalCount,
@@ -180,57 +149,50 @@ export class PolarProductRepository {
     return new PageIterator(fetcher, { limit, signal: options.signal });
   }
 
-  /**
-   * Convenience: collect every product into a single array.
-   */
   async listAll(
     params?: Omit<ProductListParams, 'page' | 'limit'>,
     options: { limit?: number; signal?: AbortSignal } = {},
-  ): Promise<PolarProduct[]> {
-    const out: PolarProduct[] = [];
+  ): Promise<Product[]> {
+    const out: Product[] = [];
     for await (const product of this.iterateAll(params, options)) {
       out.push(product);
     }
     return out;
   }
 
-  /* ------------------------------------------------------------------ */
 
   private authHeaders(): Record<string, string> {
     return { Authorization: `Bearer ${this.apiToken}` };
   }
 
   private clampLimit(limit: number | undefined): number | undefined {
-    return PaginationClamp.pageSize(limit, POLAR_API_MAX_PAGE_SIZE);
+    return PaginationClamp.pageSize(limit, API_MAX_PAGE_SIZE);
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Backward-compatible functional API                                 */
-/* ------------------------------------------------------------------ */
 
 const defaultClient = new FetchHttpClient();
 
 export async function getProducts(
-  config: PolarApiConfig,
+  config: ProductApiConfig,
   params?: ProductListParams,
-  options?: PolarRequestOptions,
+  options?: ProductRequestOptions,
 ): Promise<ProductListResponse> {
-  return new PolarProductRepository(config, defaultClient).list(params, options);
+  return new ProductRepository(config, defaultClient).list(params, options);
 }
 
 export async function getProductById(
-  config: PolarApiConfig,
+  config: ProductApiConfig,
   productId: string,
-  options?: PolarRequestOptions,
-): Promise<PolarProduct | null> {
-  return new PolarProductRepository(config, defaultClient).findById(productId, options);
+  options?: ProductRequestOptions,
+): Promise<Product | null> {
+  return new ProductRepository(config, defaultClient).findById(productId, options);
 }
 
 export async function getAllProducts(
-  config: PolarApiConfig,
+  config: ProductApiConfig,
   params?: Omit<ProductListParams, 'page' | 'limit'>,
   options: { limit?: number; signal?: AbortSignal } = {},
-): Promise<PolarProduct[]> {
-  return new PolarProductRepository(config, defaultClient).listAll(params, options);
+): Promise<Product[]> {
+  return new ProductRepository(config, defaultClient).listAll(params, options);
 }

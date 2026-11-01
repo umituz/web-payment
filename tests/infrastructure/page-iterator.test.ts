@@ -67,11 +67,11 @@ describe('PageIterator', () => {
       signal: controller.signal,
     })) {
       collected.push(item);
-      if (collected.length === 3) controller.abort(); // mid-page-2
+      if (collected.length === 3) controller.abort();
     }
 
     expect(collected).toEqual([1, 2, 3]);
-    expect(fetcher.requestedPages).toEqual([1, 2]); // page 3 never requested
+    expect(fetcher.requestedPages).toEqual([1, 2]);
   });
 
   it('yields nothing when already aborted', async () => {

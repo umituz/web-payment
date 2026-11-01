@@ -1,33 +1,15 @@
-/**
- * Billing Portal Labels
- *
- * The portal ships zero i18n dependencies. Every user-facing string lives
- * in one frozen English catalog; hosts override any subset via the
- * `labels` prop (or `<BillingLabelsProvider>`) — the same contract the
- * rest of this SDK's components (`PricingTableLabels`, …) follow, scaled
- * to a multi-tab portal.
- *
- * Interpolated strings use `{param}` placeholders, replaced by
- * `formatLabel` — translation catalogs stay plain string maps.
- */
 
 import { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { InvoiceStatus, SubscriptionStatus } from './types';
 
-/** Replace every `{param}` placeholder in a label template. */
 export function formatLabel(template: string, params: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
     key in params ? String(params[key]) : match,
   );
 }
 
-/**
- * The full label catalog. `status` / `invoiceStatus` are keyed records so
- * every enum value is translatable without string surgery.
- */
 export interface BillingLabels {
-  /** Strings shared across multiple sections. */
   common: {
     loading: string;
     usage: string;
@@ -37,7 +19,6 @@ export interface BillingLabels {
     title: string;
     description: string;
     needHelp: string;
-    /** Template with `{email}`. */
     contactAria: string;
   };
   tabs: {
@@ -74,9 +55,7 @@ export interface BillingLabels {
     yearly: string;
     monthlyShort: string;
     yearlyShort: string;
-    /** Template with `{percent}`. */
     save: string;
-    /** Template with `{percent}`. */
     saveWithYearly: string;
     mostPopular: string;
     currentPlan: string;
@@ -105,7 +84,6 @@ export interface BillingLabels {
   invoiceStatus: Record<InvoiceStatus, string>;
 }
 
-/** Partial, one-level-deep override shape of {@link BillingLabels}. */
 export type BillingLabelsOverrides = {
   [K in keyof BillingLabels]?: BillingLabels[K] extends string
     ? string
@@ -203,10 +181,6 @@ export const DEFAULT_BILLING_LABELS: Readonly<BillingLabels> = Object.freeze({
   }),
 });
 
-/**
- * Deep-merge a partial override over the default catalog. Only this
- * package's fixed two-level shape is handled — no generic deep merge.
- */
 export function mergeLabels(overrides?: BillingLabelsOverrides): BillingLabels {
   if (!overrides) return { ...DEFAULT_BILLING_LABELS } as BillingLabels;
   const merged = { ...DEFAULT_BILLING_LABELS } as BillingLabels;
@@ -228,11 +202,6 @@ const BillingLabelsContext = createContext<BillingLabels>(
   DEFAULT_BILLING_LABELS as BillingLabels,
 );
 
-/**
- * Scope label overrides to a portal subtree. Components read the merged
- * catalog via {@link useBillingLabels}; without a provider the frozen
- * English defaults apply.
- */
 export function BillingLabelsProvider({
   labels,
   children,
@@ -244,7 +213,6 @@ export function BillingLabelsProvider({
   return <BillingLabelsContext.Provider value={value}>{children}</BillingLabelsContext.Provider>;
 }
 
-/** Merged label catalog for this subtree. */
 export function useBillingLabels(): BillingLabels {
   return useContext(BillingLabelsContext);
 }

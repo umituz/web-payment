@@ -1,10 +1,3 @@
-/**
- * Invoice Card
- *
- * Renders an invoice summary with optional compact/full view and
- * keyboard-accessible actions. External links use `rel="noopener noreferrer"`
- * to prevent tabnabbing.
- */
 
 import { FileText, Download, ExternalLink } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
@@ -24,9 +17,6 @@ const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   day: 'numeric',
 };
 
-/**
- * Open an external URL in a new tab with safe rel attributes.
- */
 const openExternal = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
@@ -251,10 +241,6 @@ export const InvoiceCard = ({
   );
 };
 
-/**
- * Small icon-only ghost button — kept local because it's an internal
- * leaf of InvoiceCard, not part of the portal's public surface.
- */
 const PortalGhostIconButton = ({
   label,
   onClick,
@@ -286,5 +272,4 @@ const PortalGhostIconButton = ({
 
 export default InvoiceCard;
 
-/** Re-export for type-safe callback in parent components. */
 export type { Invoice } from '../types';

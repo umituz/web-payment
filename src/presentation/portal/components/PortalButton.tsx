@@ -1,10 +1,3 @@
-/**
- * PortalButton
- *
- * Local button primitive for the billing portal — styled entirely inline
- * from VisualTokens so the portal works inside any host (vanilla CSS,
- * Tailwind, …) without importing a design-system package.
- */
 
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { VisualTokens } from '../../theme/visual-tokens';
@@ -15,11 +8,8 @@ export type PortalButtonSize = 'sm' | 'md';
 export interface PortalButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: PortalButtonVariant;
   size?: PortalButtonSize;
-  /** Stretch to the full width of the container. */
   fullWidth?: boolean;
-  /** Pill-shaped ends (used by plan-card CTAs). */
   pill?: boolean;
-  /** Render a leading icon inside the button. */
   icon?: ReactNode;
   children?: ReactNode;
 }

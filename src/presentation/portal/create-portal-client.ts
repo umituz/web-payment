@@ -1,57 +1,35 @@
-/**
- * createPolarPortalClient — binds a `PolarAdapter` (any transport:
- * http, custom) to the portal's `BillingApiClient` seam.
- *
- * One structural difference from Stripe-shaped backends: Polar manages
- * payment methods inside its hosted customer portal (there is no card
- * CRUD API), so the payment-method operations redirect there instead
- * of mutating local state.
- *
- * Plan keys: when `SubscriptionStatus.plan` carries the host's plan key
- * (not a Polar product id), products tagged with `metadata.planId` are
- * matched against it — servers that expose the catalog can attach that
- * tag once and everything lines up.
- */
 
-import type { PolarAdapter } from '../../../domain/interfaces';
+import type { BillingAdapter } from '../../domain/interfaces';
 import type {
   BillingCycle,
   OrderItem,
   SubscriptionStatus as CoreSubscriptionStatus,
-} from '../../../domain/entities';
-import type { PolarProduct } from '../../../domain/entities';
-import { WindowNavigationStrategy } from '../../navigation/navigation.strategy';
-import type { NavigationStrategy } from '../../navigation/navigation.strategy';
-import { transformPolarProducts } from '../utils';
-import type { BillingApiClient } from '../hooks';
+} from '../../domain/entities';
+import type { Product } from '../../domain/entities';
+import { WindowNavigationStrategy } from '../navigation/navigation.strategy';
+import type { NavigationStrategy } from '../navigation/navigation.strategy';
+import { transformProducts } from './utils';
+import type { BillingApiClient } from './hooks';
 import type {
   BillingSummary,
   Invoice,
   PaymentMethod,
   PlanTier,
   Subscription,
-} from '../types';
-import { CURRENCY, INVOICE_STATUS, SUBSCRIPTION_STATUS } from '../constants';
+} from './types';
+import { CURRENCY, INVOICE_STATUS, SUBSCRIPTION_STATUS } from './constants';
 
-export interface PolarPortalClientOptions {
-  adapter: PolarAdapter;
-  /** Server-fetched product catalog (never shipped with a token). */
-  products: PolarProduct[];
-  /** Acting user/tenant id — forwarded to every adapter call. */
+export interface PortalClientOptions {
+  adapter: BillingAdapter;
+  products: Product[];
   userId?: string;
-  /** Cycle used when a checkout carries none. Default `monthly`. */
   defaultCycle?: BillingCycle;
-  /** Checkout return URL; `{CHECKOUT_ID}` templating supported. */
   successUrl?: string;
-  /** Redirect strategy — defaults to `window.location` in browsers. */
   navigation?: NavigationStrategy;
 }
 
-/** BillingApiClient plus the Polar-specific operations the portal page uses. */
-export interface PolarPortalClient extends BillingApiClient {
-  /** Start a checkout for a product at an explicit cycle. */
+export interface PortalClient extends BillingApiClient {
   selectPlan: (productId: string, cycle?: BillingCycle) => Promise<void>;
-  /** Open the hosted customer portal (payment methods, invoices). */
   openPortal: () => Promise<string>;
 }
 
@@ -70,7 +48,6 @@ function portalStatus(core: CoreSubscriptionStatus['subscriptionStatus']): Subsc
       return SUBSCRIPTION_STATUS.INCOMPLETE;
     case 'revoked':
       return SUBSCRIPTION_STATUS.REVOKED;
-    // 'none' and unknown values render as lapsed — nothing is owed.
     default:
       return SUBSCRIPTION_STATUS.CANCELED;
   }
@@ -112,8 +89,6 @@ function orderToInvoice(order: OrderItem): Invoice {
   };
 }
 
-/** Marker row for the hosted portal — the seam requires a return value,
- *  and the page unloads on redirect before it could ever render. */
 const HOSTED_PORTAL_METHOD: PaymentMethod = {
   id: 'hosted-portal',
   type: 'card',
@@ -122,14 +97,13 @@ const HOSTED_PORTAL_METHOD: PaymentMethod = {
   card: { last4: '••••', brand: 'Managed in the billing portal', expiryMonth: 0, expiryYear: 0 },
 };
 
-export function createPolarPortalClient(options: PolarPortalClientOptions): PolarPortalClient {
+export function createPortalClient(options: PortalClientOptions): PortalClient {
   const { adapter, products, userId, successUrl } = options;
   const defaultCycle: BillingCycle = options.defaultCycle ?? 'monthly';
   const navigation: NavigationStrategy = options.navigation ?? new WindowNavigationStrategy();
-  const tiers = transformPolarProducts(products);
+  const tiers = transformProducts(products);
 
-  /** Host plan key -> product, from the catalog's metadata.planId tags. */
-  const productByPlanKey = new Map<string, PolarProduct>();
+  const productByPlanKey = new Map<string, Product>();
   for (const product of products) {
     const key = product.metadata?.planId;
     if (typeof key === 'string' && key.length > 0) productByPlanKey.set(key, product);

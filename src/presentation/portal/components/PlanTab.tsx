@@ -1,9 +1,3 @@
-/**
- * Billing — Plan Tab
- *
- * Active plan summary + change/cancel actions with a two-step
- * cancel confirmation surfaced inline.
- */
 
 import { useState } from 'react';
 import { Calendar, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
@@ -47,7 +41,6 @@ export const PlanTab = ({
     try {
       await onCancelSubscription();
     } catch {
-      // Surface the failure — never leave it as an unhandled rejection.
       setCancelError(labels.plan.cancelFailed);
     } finally {
       setCancelling(false);

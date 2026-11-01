@@ -1,9 +1,3 @@
-/**
- * Security policies for outbound URLs.
- *
- * Separated from generic validation so the security boundary is obvious and
- * the rules can be extended (CSP, allow-lists) in one place.
- */
 
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '0.0.0.0', '[::1]']);
 

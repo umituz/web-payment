@@ -1,16 +1,12 @@
-/**
- * Polar entity → PlanTier transform, exercised against the SDK's own
- * camelCase domain entities (the shape `mapProduct` produces).
- */
 
 import { describe, it, expect } from 'vitest';
-import type { PolarProduct, PolarPrice } from '../../../src/domain/entities';
+import type { Product, ProductPrice } from '../../../src/domain/entities';
 import {
-  transformPolarProductToPlan,
-  transformPolarProducts,
-} from '../../../src/presentation/portal/utils/polar';
+  transformProductToPlan,
+  transformProducts,
+} from '../../../src/presentation/portal/utils/plans';
 
-const price = (overrides?: Partial<PolarPrice>): PolarPrice => ({
+const price = (overrides?: Partial<ProductPrice>): ProductPrice => ({
   id: 'price_1',
   type: 'fixed',
   amountType: 'fixed',
@@ -22,7 +18,7 @@ const price = (overrides?: Partial<PolarPrice>): PolarPrice => ({
   ...overrides,
 });
 
-const product = (overrides?: Partial<PolarProduct>): PolarProduct => ({
+const product = (overrides?: Partial<Product>): Product => ({
   id: 'prod_1',
   name: 'Pro',
   description: 'Everything you need',
@@ -41,9 +37,9 @@ const product = (overrides?: Partial<PolarProduct>): PolarProduct => ({
   ...overrides,
 });
 
-describe('transformPolarProductToPlan', () => {
+describe('transformProductToPlan', () => {
   it('projects a monthly price into a PlanTier', () => {
-    const plan = transformPolarProductToPlan(product(), price());
+    const plan = transformProductToPlan(product(), price());
     expect(plan).toMatchObject({
       id: 'prod_1',
       name: 'Pro',
@@ -55,35 +51,35 @@ describe('transformPolarProductToPlan', () => {
   });
 
   it('normalizes a yearly price to its monthly equivalent and keeps the yearly figure', () => {
-    const plan = transformPolarProductToPlan(
+    const plan = transformProductToPlan(
       product(),
       price({ amount: 12000, recurringInterval: 'yearly' }),
     );
-    expect(plan.monthlyPrice).toBe(1000); // 12000 / 12
+    expect(plan.monthlyPrice).toBe(1000);
     expect(plan.yearlyPrice).toBe(12000);
   });
 
   it('turns benefits into the feature list, dropping empty descriptions', () => {
-    const plan = transformPolarProductToPlan(product(), price());
+    const plan = transformProductToPlan(product(), price());
     expect(plan.features).toEqual(['Unlimited seats']);
   });
 
   it('throws on an unsupported currency', () => {
     expect(() =>
-      transformPolarProductToPlan(product(), price({ currency: 'XAU' })),
+      transformProductToPlan(product(), price({ currency: 'XAU' })),
     ).toThrow(/Unsupported currency/);
   });
 
   it('throws on a price without a recurring interval (one-time price)', () => {
     expect(() =>
-      transformPolarProductToPlan(product(), price({ recurringInterval: undefined })),
+      transformProductToPlan(product(), price({ recurringInterval: undefined })),
     ).toThrow(/unsupported interval/);
   });
 });
 
-describe('transformPolarProducts', () => {
+describe('transformProducts', () => {
   it('skips archived products and archived prices', () => {
-    const plans = transformPolarProducts([
+    const plans = transformProducts([
       product({ id: 'archived_prod', isArchived: true }),
       product({
         id: 'prod_ok',
@@ -95,7 +91,7 @@ describe('transformPolarProducts', () => {
   });
 
   it('emits one tier per product, pairing both real prices', () => {
-    const plans = transformPolarProducts([
+    const plans = transformProducts([
       product({
         prices: [
           price({ id: 'p_month', amount: 1000, recurringInterval: 'monthly' }),
@@ -108,7 +104,7 @@ describe('transformPolarProducts', () => {
   });
 
   it('keeps the real yearly discount instead of deriving the yearly figure', () => {
-    const plans = transformPolarProducts([
+    const plans = transformProducts([
       product({
         prices: [
           price({ id: 'p_month', amount: 1000, recurringInterval: 'monthly' }),
@@ -121,14 +117,14 @@ describe('transformPolarProducts', () => {
   });
 
   it('derives the missing figure for a single-priced product', () => {
-    const monthlyOnly = transformPolarProducts([
+    const monthlyOnly = transformProducts([
       product({ prices: [price({ recurringInterval: 'monthly' })] }),
     ]);
     expect(monthlyOnly).toHaveLength(1);
     expect(monthlyOnly[0].monthlyPrice).toBe(1200);
     expect(monthlyOnly[0].yearlyPrice).toBe(14400);
 
-    const yearlyOnly = transformPolarProducts([
+    const yearlyOnly = transformProducts([
       product({ prices: [price({ amount: 12000, recurringInterval: 'yearly' })] }),
     ]);
     expect(yearlyOnly).toHaveLength(1);
@@ -137,7 +133,7 @@ describe('transformPolarProducts', () => {
   });
 
   it('skips products with no recurring price', () => {
-    const plans = transformPolarProducts([
+    const plans = transformProducts([
       product({ prices: [price({ recurringInterval: undefined })] }),
     ]);
     expect(plans).toHaveLength(0);

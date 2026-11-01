@@ -1,26 +1,16 @@
-/**
- * HttpClient — minimal Strategy contract.
- *
- * The Polar product service depends on this interface, not on `fetch`, so the
- * transport can be swapped (fetch / undici / node http) or mocked without
- * changing the calling code.
- */
 
 export interface HttpRequest {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
   headers?: Record<string, string>;
   body?: unknown;
-  /** Aborts the underlying transport when fired. */
   signal?: AbortSignal;
-  /** Request budget in ms; defaults to 15s. `Infinity` disables the cap. */
   timeoutMs?: number;
 }
 
 export interface HttpResponse<T> {
   status: number;
   ok: boolean;
-  /** Parsed JSON body, or `null` when the body was empty / not JSON. */
   data: T | null;
   text(): Promise<string>;
 }
@@ -29,13 +19,6 @@ export interface HttpClient {
   request<T>(request: HttpRequest): Promise<HttpResponse<T>>;
 }
 
-/**
- * `fetch`-based implementation. Returns a typed response envelope that hides
- * the raw `Response` lifecycle from callers.
- *
- * The body is read once as text and reused for both JSON parsing and the
- * `text()` accessor — a `Response` body can only be consumed a single time.
- */
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 export class FetchHttpClient implements HttpClient {

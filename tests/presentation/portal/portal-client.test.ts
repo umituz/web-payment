@@ -1,13 +1,8 @@
-/**
- * createPolarPortalClient — the BillingApiClient binding over a
- * PolarAdapter: summary building, checkout redirect semantics, and the
- * hosted-portal redirect for payment-method operations.
- */
 
 import { describe, it, expect, vi } from 'vitest';
-import { createPolarPortalClient } from '../../../src/presentation/portal/polar/create-polar-portal';
+import { createPortalClient } from '../../../src/presentation/portal/create-portal-client';
 import { NoopNavigationStrategy } from '../../../src/presentation/navigation/navigation.strategy';
-import type { PolarAdapter } from '../../../src/domain/interfaces';
+import type { BillingAdapter } from '../../../src/domain/interfaces';
 import type {
   CancelResult,
   CheckoutResult,
@@ -16,7 +11,7 @@ import type {
   SyncResult,
 } from '../../../src/domain/entities';
 
-function makeAdapter(overrides: Partial<PolarAdapter> = {}): PolarAdapter {
+function makeAdapter(overrides: Partial<BillingAdapter> = {}): BillingAdapter {
   return {
     getStatus: vi.fn(async (): Promise<SubscriptionStatus> => ({
       plan: 'plan_pro',
@@ -25,7 +20,7 @@ function makeAdapter(overrides: Partial<PolarAdapter> = {}): PolarAdapter {
       cancelAtPeriodEnd: false,
       currentPeriodEnd: '2026-11-01T00:00:00Z',
       billingCycle: 'monthly',
-      polarCustomerId: 'cus_1',
+      providerCustomerId: 'cus_1',
     })),
     createCheckout: vi.fn(async (): Promise<CheckoutResult> => ({ url: 'https://polar.sh/checkout/co_1', id: 'co_1' })),
     syncSubscription: vi.fn(async (): Promise<SyncResult> => ({ synced: true })),
@@ -66,10 +61,10 @@ const PRODUCTS = [
   },
 ];
 
-describe('createPolarPortalClient', () => {
+describe('createPortalClient', () => {
   it('builds the summary: plan-key lookup via metadata.planId, invoices, upcoming invoice', async () => {
     const adapter = makeAdapter();
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: new NoopNavigationStrategy(),
@@ -77,8 +72,6 @@ describe('createPolarPortalClient', () => {
 
     const summary = await client.loadBilling();
 
-    // status.plan is the host plan key ('plan_pro'), the tier is resolved
-    // through the catalog's metadata.planId tag onto the product's tier.
     expect(summary.subscription.planId).toBe('plan_pro');
     expect(summary.subscription.plan.id).toBe('prod_pro');
     expect(summary.subscription.plan.monthlyPrice).toBe(9900);
@@ -103,7 +96,7 @@ describe('createPolarPortalClient', () => {
         },
       ]),
     });
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: new NoopNavigationStrategy(),
@@ -117,7 +110,7 @@ describe('createPolarPortalClient', () => {
   it('starts a checkout and redirects through the strategy', async () => {
     const redirect = vi.fn();
     const adapter = makeAdapter();
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: { redirect },
@@ -132,7 +125,7 @@ describe('createPolarPortalClient', () => {
 
   it('updateCycle re-checkouts the current plan product at the new cycle', async () => {
     const adapter = makeAdapter();
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: new NoopNavigationStrategy(),
@@ -147,7 +140,7 @@ describe('createPolarPortalClient', () => {
   it('payment-method operations redirect to the hosted portal', async () => {
     const redirect = vi.fn();
     const adapter = makeAdapter();
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: { redirect },
@@ -164,7 +157,7 @@ describe('createPolarPortalClient', () => {
 
   it('cancels through the adapter', async () => {
     const adapter = makeAdapter();
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: new NoopNavigationStrategy(),
@@ -177,7 +170,7 @@ describe('createPolarPortalClient', () => {
     const adapter = makeAdapter({
       getStatus: vi.fn(async (): Promise<SubscriptionStatus> => ({ plan: 'free', subscriptionStatus: 'none' })),
     });
-    const client = createPolarPortalClient({
+    const client = createPortalClient({
       adapter,
       products: PRODUCTS,
       navigation: new NoopNavigationStrategy(),

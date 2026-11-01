@@ -1,14 +1,13 @@
-// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
 import { useContext } from 'react';
-import { PolarProvider } from '../../src/presentation/components/PolarProvider';
-import { PolarContext, type PolarContextValue } from '../../src/presentation/context/polar-context';
+import { BillingProvider } from '../../src/presentation/components/BillingProvider';
+import { BillingContext, type BillingContextValue } from '../../src/presentation/context/billing-context';
 import { NoopNavigationStrategy } from '../../src/presentation/navigation/navigation.strategy';
-import type { PolarAdapter } from '../../src/domain/interfaces';
+import type { BillingAdapter } from '../../src/domain/interfaces';
 import { FREE_SUBSCRIPTION_STATUS } from '../../src/domain/entities/subscription.entity';
 
-function stubAdapter(overrides?: Partial<PolarAdapter>): PolarAdapter {
+function stubAdapter(overrides?: Partial<BillingAdapter>): BillingAdapter {
   return {
     getStatus: vi.fn().mockResolvedValue(FREE_SUBSCRIPTION_STATUS),
     createCheckout: vi.fn().mockResolvedValue({ url: 'https://pay.test/1', id: 'co_1' }),
@@ -20,31 +19,30 @@ function stubAdapter(overrides?: Partial<PolarAdapter>): PolarAdapter {
   };
 }
 
-/** Probe component that mirrors the context value for assertions. */
 function ContextProbe({ onValue }: { onValue: (value: unknown) => void }) {
-  const ctx = useContext(PolarContext);
+  const ctx = useContext(BillingContext);
   onValue(ctx);
   return null;
 }
 
-function probeRender(adapter: PolarAdapter, userId?: string) {
+function probeRender(adapter: BillingAdapter, userId?: string) {
   let latest: unknown;
   const utils = render(
-    <PolarProvider
+    <BillingProvider
       adapter={adapter}
       userId={userId}
       navigation={new NoopNavigationStrategy()}
     >
       <ContextProbe onValue={(v) => (latest = v)} />
-    </PolarProvider>,
+    </BillingProvider>,
   );
   return {
     utils,
-    value: () => latest as PolarContextValue,
+    value: () => latest as BillingContextValue,
   };
 }
 
-describe('PolarProvider', () => {
+describe('BillingProvider', () => {
   it('exposes the free default while no user is set', async () => {
     const adapterImpl = stubAdapter();
     const { value } = probeRender(adapterImpl);
@@ -77,15 +75,15 @@ describe('PolarProvider', () => {
 
     let latest: unknown;
     utils.rerender(
-      <PolarProvider
+      <BillingProvider
         adapter={adapterImpl}
         userId="user_2"
         navigation={new NoopNavigationStrategy()}
       >
         <ContextProbe onValue={(v) => (latest = v)} />
-      </PolarProvider>,
+      </BillingProvider>,
     );
-    const rerendered = () => latest as PolarContextValue;
+    const rerendered = () => latest as BillingContextValue;
 
     await waitFor(() => expect(rerendered().status.plan).toBe('premium'));
     expect(getStatus).toHaveBeenLastCalledWith('user_2');
@@ -101,8 +99,6 @@ describe('PolarProvider', () => {
   });
 
   it('a slow earlier refresh can never overwrite a newer one', async () => {
-    // Regression: without a generation guard, the slow first response
-    // resolves last and clobbers the fresh second refresh.
     const getStatus = vi
       .fn()
       .mockImplementationOnce(
@@ -121,7 +117,6 @@ describe('PolarProvider', () => {
     });
     expect(value().status.plan).toBe('fast');
 
-    // Wait past the slow resolution — it must NOT overwrite 'fast'.
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
     });

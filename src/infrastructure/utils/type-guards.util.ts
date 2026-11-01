@@ -1,10 +1,3 @@
-/**
- * Generic type guards.
- *
- * Single-purpose helpers to safely coerce untyped inputs (Firestore payloads,
- * URL params, JSON values) into typed values without `as` casts at the
- * call site.
- */
 
 export function asString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;

@@ -1,24 +1,5 @@
-/**
- * createHttpAdapter — `PolarAdapter` over a conventional REST surface.
- *
- * For backends that run as your own API worker next to the app, this
- * adapter implements the SDK contract against six endpoints under a
- * single base path (default `/api/billing`):
- *
- *   GET  /status?userId=              -> SubscriptionStatus
- *   POST /checkout   { productId, billingCycle?, successUrl?, userId? } -> CheckoutResult
- *   POST /sync       { userId, checkoutId? }                          -> SyncResult
- *   GET  /history?userId=             -> OrderItem[]
- *   POST /cancel     { userId?, reason? }                              -> CancelResult
- *   GET  /portal?userId=              -> { url: string }
- *
- * Method parameters (the SDK's `userId`) are passed as `userId` — in the
- * query for GETs and in the body for POSTs — falling back to `getUserId`
- * when the SDK does not supply one. The server derives the acting user
- * from its own session when neither is present.
- */
 
-import type { PolarAdapter } from '../../../domain/interfaces';
+import type { BillingAdapter } from '../../../domain/interfaces';
 import type {
   CancellationReason,
   CancelResult,
@@ -30,13 +11,9 @@ import type {
 } from '../../../domain/entities';
 
 export interface HttpAdapterConfig {
-  /** Base path of the billing endpoints. Default `/api/billing`. */
   baseUrl?: string;
-  /** Injectable fetch for tests. Defaults to `globalThis.fetch`. */
   fetchImpl?: typeof fetch;
-  /** Resolves the acting user/tenant id when the SDK does not supply one. */
   getUserId?: () => string | undefined | Promise<string | undefined>;
-  /** Extra request headers (auth tokens, trace ids). */
   getHeaders?: () => Record<string, string> | Promise<Record<string, string>>;
 }
 
@@ -52,7 +29,7 @@ function errorMessage(status: number, body: unknown): string {
   return `${detail} (HTTP ${status})`;
 }
 
-export function createHttpAdapter(config: HttpAdapterConfig = {}): PolarAdapter {
+export function createHttpAdapter(config: HttpAdapterConfig = {}): BillingAdapter {
   const baseUrl = (config.baseUrl ?? '/api/billing').replace(/\/$/, '');
   const doFetch = config.fetchImpl ?? globalThis.fetch.bind(globalThis);
 
