@@ -37,9 +37,35 @@ describe('BillingClient', () => {
     expect(call.url).toBe('https://api.polar.sh/v1/checkouts');
     expect(call.headers?.Authorization).toBe('Bearer oat_test');
     expect(call.body).toEqual({
-      product_id: 'prod_1',
+      products: ['prod_1'],
       success_url: 'https://app.example/billing/return?checkout_id={CHECKOUT_ID}',
       metadata: { tenant: 'org_1' },
+    });
+  });
+
+  it('sends an ad-hoc price, external customer id and discount toggle', async () => {
+    const http = httpClientReturning({ id: 'co_3', url: 'https://polar.sh/checkout/co_3' });
+    const client = new BillingClient({ apiToken: 'oat_test', http });
+
+    await client.createCheckout({
+      productId: 'prod_booking',
+      amountCents: 2500,
+      currency: 'usd',
+      externalCustomerId: 'usr_77',
+      allowDiscountCodes: false,
+      customerEmail: 'learner@example.test',
+    });
+
+    expect(http.calls[0].body).toEqual({
+      products: ['prod_booking'],
+      prices: {
+        prod_booking: [
+          { amount_type: 'fixed', price_currency: 'usd', price_amount: 2500 },
+        ],
+      },
+      customer_email: 'learner@example.test',
+      external_customer_id: 'usr_77',
+      allow_discount_codes: false,
     });
   });
 
@@ -67,9 +93,10 @@ describe('BillingClient', () => {
     expect(call.url).toBe('https://api.polar.sh/v1/products');
     expect(call.body).toEqual({
       name: 'Ultralight Gear Course',
+      recurring_interval: null,
       description: 'Six chapters, 4K lessons.',
       prices: [
-        { type: 'one_time', amount_type: 'fixed', price_currency: 'usd', price_amount: 7900 },
+        { amount_type: 'fixed', price_currency: 'usd', price_amount: 7900 },
       ],
       metadata: { creatorId: 'crt_03', productId: 'prd_1' },
     });

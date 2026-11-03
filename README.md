@@ -176,6 +176,8 @@ import {
   verifyWebhook,
   parseWebhookEvent,
   asCheckoutCompleted,
+  asSubscriptionChanged,
+  asOrderPaid,
 } from '@umituz/web-polar-payment/server';
 
 const billing = new BillingClient({
@@ -183,12 +185,24 @@ const billing = new BillingClient({
   sandbox: env.POLAR_SANDBOX === 'true', // sandbox-api.polar.sh
 });
 
-// Checkout: POST /v1/checkouts — metadata is copied onto the subscription
+// Checkout: POST /v1/checkouts with `products: [id]` — metadata is copied
+// onto the order/subscription. Never collect card data yourself: redirect
+// the browser to `checkout.url` (Polar-hosted, PCI scope stays SAQ-A).
 const checkout = await billing.createCheckout({
   productId,
   successUrl: `${appUrl}/billing/return?checkout_id={CHECKOUT_ID}`,
-  customerId,
-  metadata: { organizationId },
+  externalCustomerId: user.id, // links your user to the Polar customer
+  metadata: { organizationId: user.orgId },
+});
+
+// Dynamic amount (bookings, pay-what-you-want floors): an ad-hoc fixed
+// price is created on the checkout session, catalog product stays intact
+const bookingCheckout = await billing.createCheckout({
+  productId: bookingProductId,
+  amountCents: 2500,
+  currency: 'usd',
+  allowDiscountCodes: false,
+  metadata: { bookingId },
 });
 
 // One-time products (digital goods): POST /v1/products with a fixed price
@@ -211,7 +225,9 @@ if (!(await verifyWebhook(raw, request.headers, env.POLAR_WEBHOOK_SECRET))) {
 }
 // Then parse the (still raw) body into a typed event view
 const event = parseWebhookEvent(raw);
-const sale = event && asCheckoutCompleted(event); // null unless checkout.completed
+const sale = event && asCheckoutCompleted(event);        // checkout.completed
+const change = event && asSubscriptionChanged(event);    // subscription.* lifecycle
+const paid = event && asOrderPaid(event);                // order.paid (renewals)
 ```
 
 The browser side binds the same `BillingAdapter` contract to six endpoints under

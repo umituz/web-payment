@@ -11,12 +11,18 @@ export interface BillingClientConfig {
   http?: HttpClient;
 }
 
+export type CheckoutMetadata = Record<string, string | number | boolean>;
+
 export interface CheckoutSessionParams {
   productId: string;
   successUrl?: string;
   customerId?: string;
   customerEmail?: string;
-  metadata?: Record<string, string>;
+  externalCustomerId?: string;
+  amountCents?: number;
+  currency?: string;
+  allowDiscountCodes?: boolean;
+  metadata?: CheckoutMetadata;
 }
 
 export interface CheckoutSession {
@@ -26,7 +32,7 @@ export interface CheckoutSession {
   customerId?: string;
   customerEmail?: string;
   subscriptionId?: string | null;
-  metadata?: Record<string, string>;
+  metadata?: CheckoutMetadata;
 }
 
 export interface SubscriptionRecord {
@@ -54,7 +60,7 @@ export interface CreateProductParams {
   description?: string;
   amountCents: number;
   currency?: string;
-  metadata?: Record<string, string>;
+  metadata?: CheckoutMetadata;
 }
 
 export interface CreatedProduct {
@@ -74,7 +80,7 @@ interface CheckoutDto {
   customer_id?: string | null;
   customer_email?: string | null;
   subscription_id?: string | null;
-  metadata?: Record<string, string> | null;
+  metadata?: CheckoutMetadata | null;
 }
 
 interface SubscriptionDto {
@@ -164,10 +170,10 @@ export class BillingClient {
   async createProduct(params: CreateProductParams): Promise<CreatedProduct> {
     const dto = await this.request<ProductDto>('POST', '/products', {
       name: params.name,
+      recurring_interval: null,
       ...(params.description ? { description: params.description } : {}),
       prices: [
         {
-          type: 'one_time',
           amount_type: 'fixed',
           price_currency: params.currency ?? 'usd',
           price_amount: params.amountCents,
@@ -180,10 +186,27 @@ export class BillingClient {
 
   async createCheckout(params: CheckoutSessionParams): Promise<CheckoutSession> {
     const dto = await this.request<CheckoutDto>('POST', '/checkouts', {
-      product_id: params.productId,
+      products: [params.productId],
+      ...(params.amountCents !== undefined
+        ? {
+            prices: {
+              [params.productId]: [
+                {
+                  amount_type: 'fixed',
+                  price_currency: params.currency ?? 'usd',
+                  price_amount: params.amountCents,
+                },
+              ],
+            },
+          }
+        : {}),
       ...(params.successUrl ? { success_url: params.successUrl } : {}),
       ...(params.customerId ? { customer_id: params.customerId } : {}),
       ...(params.customerEmail ? { customer_email: params.customerEmail } : {}),
+      ...(params.externalCustomerId ? { external_customer_id: params.externalCustomerId } : {}),
+      ...(params.allowDiscountCodes !== undefined
+        ? { allow_discount_codes: params.allowDiscountCodes }
+        : {}),
       ...(params.metadata ? { metadata: params.metadata } : {}),
     });
     return mapCheckout(dto);

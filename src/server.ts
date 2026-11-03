@@ -6,6 +6,7 @@ export type {
   BillingClientConfig,
   CheckoutSessionParams,
   CheckoutSession,
+  CheckoutMetadata,
   CreateProductParams,
   CreatedProduct,
   SubscriptionRecord,
@@ -23,10 +24,14 @@ export type {
 export {
   parseWebhookEvent,
   asCheckoutCompleted,
+  asSubscriptionChanged,
+  asOrderPaid,
 } from './infrastructure/webhook/parse-event';
 export type {
   WebhookEvent,
   CheckoutCompleted,
+  SubscriptionChanged,
+  OrderPaid,
 } from './infrastructure/webhook/parse-event';
 
 export { BillingApiError, isBillingApiError } from './infrastructure/services/product.repository';

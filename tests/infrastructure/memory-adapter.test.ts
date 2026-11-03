@@ -9,7 +9,31 @@ describe('createMemoryBillingAdapter', () => {
     expect(status.subscriptionStatus).toBe('none');
   });
 
-  it('updates status and records history upon checkout', async () => {
+  it('does not activate on checkout alone', async () => {
+    const adapter = createMemoryBillingAdapter();
+
+    const checkout = await adapter.createCheckout({
+      productId: 'prod_pro_10',
+      planKey: 'pro_10',
+      billingCycle: 'monthly',
+      seats: 10,
+      customerEmail: 'teacher@example.test',
+      metadata: { tier: 'pro_10' },
+      successUrl: 'https://app.example/studio?checkout_id={CHECKOUT_ID}',
+    });
+
+    expect(checkout.id).toMatch(/^chk_/);
+    expect(checkout.url).toContain(checkout.id);
+
+    const status = await adapter.getStatus('user_1');
+    expect(status.plan).toBe('free');
+    expect(status.subscriptionStatus).toBe('none');
+
+    const history = await adapter.getBillingHistory('user_1');
+    expect(history.length).toBe(0);
+  });
+
+  it('activates and records history on sync after checkout', async () => {
     const onCheckout = vi.fn();
     const adapter = createMemoryBillingAdapter({ onCheckout });
 
@@ -18,13 +42,8 @@ describe('createMemoryBillingAdapter', () => {
       planKey: 'pro_10',
       billingCycle: 'monthly',
       seats: 10,
-      customerEmail: 'teacher@hangora.test',
       metadata: { tier: 'pro_10' },
-      successUrl: 'https://hangora.test/app/studio?session_id={CHECKOUT_ID}',
     });
-
-    expect(checkout.id).toMatch(/^chk_/);
-    expect(checkout.url).toContain(checkout.id);
     expect(onCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
         productId: 'prod_pro_10',
@@ -32,6 +51,9 @@ describe('createMemoryBillingAdapter', () => {
         seats: 10,
       }),
     );
+
+    const before = await adapter.syncSubscription('user_1', checkout.id);
+    expect(before).toEqual({ synced: true, plan: 'pro_10' });
 
     const status = await adapter.getStatus('user_1');
     expect(status.plan).toBe('pro_10');
@@ -43,7 +65,13 @@ describe('createMemoryBillingAdapter', () => {
     expect(history[0].paid).toBe(true);
   });
 
-  it('cancels subscription gracefully', async () => {
+  it('reports not synced when there is no checkout to fulfill', async () => {
+    const adapter = createMemoryBillingAdapter();
+    const result = await adapter.syncSubscription('user_1');
+    expect(result.synced).toBe(false);
+  });
+
+  it('cancels an active subscription gracefully', async () => {
     const onCancel = vi.fn();
     const adapter = createMemoryBillingAdapter({
       initialStatus: { plan: 'pro_10', subscriptionStatus: 'active' },
@@ -56,5 +84,11 @@ describe('createMemoryBillingAdapter', () => {
 
     const status = await adapter.getStatus('user_1');
     expect(status.subscriptionStatus).toBe('canceled');
+  });
+
+  it('refuses to cancel when there is no active subscription', async () => {
+    const adapter = createMemoryBillingAdapter();
+    const result = await adapter.cancelSubscription('unused');
+    expect(result.success).toBe(false);
   });
 });
