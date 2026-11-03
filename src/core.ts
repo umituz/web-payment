@@ -49,3 +49,14 @@ export type {
   ProductBenefitDto,
   ProductListResponseDto,
 } from './domain/mappers/product.mapper';
+
+export {
+  minorUnitDivisor,
+  toMajorUnits,
+  toMinorUnits,
+} from './domain/utils/minor-units';
+
+export {
+  applyPercentDiscount,
+  normalizeCouponCode,
+} from './domain/utils/percent-discount';

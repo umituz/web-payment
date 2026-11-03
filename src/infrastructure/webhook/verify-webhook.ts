@@ -79,6 +79,8 @@ function signaturesFromHeader(header: string): string[] {
     .map((part) => (part.startsWith('v1,') ? part.slice(3) : part));
 }
 
+export const DEFAULT_WEBHOOK_TOLERANCE_MS = 5 * 60 * 1000;
+
 export interface VerifyWebhookOptions {
   toleranceMs?: number;
 }

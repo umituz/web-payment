@@ -14,3 +14,7 @@ export function minorUnitDivisor(currency: string): number {
 export function toMajorUnits(amount: number, currency: string): number {
   return amount / minorUnitDivisor(currency);
 }
+
+export function toMinorUnits(amount: number, currency: string): number {
+  return Math.round(amount * minorUnitDivisor(currency));
+}
