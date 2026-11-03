@@ -79,7 +79,10 @@ export function createHttpAdapter(config: HttpAdapterConfig = {}): BillingAdapte
         'POST',
         '/checkout',
         {
-          productId: params.productId,
+          ...(params.productId ? { productId: params.productId } : {}),
+          ...(params.productKey ? { productKey: params.productKey } : {}),
+          ...(params.itemId ? { itemId: params.itemId } : {}),
+          ...(params.couponCode ? { couponCode: params.couponCode } : {}),
           ...(params.billingCycle ? { billingCycle: params.billingCycle } : {}),
           ...(params.successUrl ? { successUrl: params.successUrl } : {}),
           ...(params.planKey ? { planKey: params.planKey } : {}),
@@ -96,8 +99,14 @@ export function createHttpAdapter(config: HttpAdapterConfig = {}): BillingAdapte
     },
 
     async getBillingHistory(userId: string) {
-      const items = await request<OrderItem[] | { items: OrderItem[] }>('GET', '/history', undefined, userId);
-      return Array.isArray(items) ? items : items.items ?? [];
+      const result = await request<OrderItem[] | { items?: OrderItem[]; orders?: OrderItem[] }>(
+        'GET',
+        '/history',
+        undefined,
+        userId,
+      );
+      if (Array.isArray(result)) return result;
+      return result.orders ?? result.items ?? [];
     },
 
     cancelSubscription(reason?: CancellationReason) {

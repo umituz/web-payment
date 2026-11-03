@@ -47,7 +47,7 @@ export function createMemoryBillingAdapter(config: MemoryAdapterConfig = {}): Bi
   }
 
   function fulfill(checkout: PendingCheckout): SubscriptionStatus {
-    const planName = checkout.params.planKey ?? checkout.params.productId;
+    const planName = checkout.params.planKey ?? checkout.params.productId ?? checkout.params.productKey ?? 'default';
     return {
       ...status,
       plan: planName,

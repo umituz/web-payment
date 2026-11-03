@@ -1,5 +1,12 @@
 
 export {
+  PAYMENT_PROVIDER,
+  PAYMENT_PROVIDER_VALUES,
+  isKnownPaymentProvider,
+} from './domain/enums/payment-provider.enum';
+export type { PaymentProvider } from './domain/enums/payment-provider.enum';
+
+export {
   SUBSCRIPTION_STATUS,
   SUBSCRIPTION_STATUS_VALUES,
   isKnownSubscriptionStatus,
@@ -60,3 +67,15 @@ export {
   applyPercentDiscount,
   normalizeCouponCode,
 } from './domain/utils/percent-discount';
+
+export { formatReceiptNumber } from './infrastructure/utils/receipt.util';
+
+export {
+  buildCheckoutMetadata,
+  readCheckoutMetadata,
+} from './infrastructure/utils/checkout-metadata';
+export type {
+  BuildCheckoutMetadataInput,
+  CheckoutOrderMetadata,
+} from './infrastructure/utils/checkout-metadata';
+

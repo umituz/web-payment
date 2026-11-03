@@ -1,9 +1,13 @@
 export {
   BillingClient,
+  PolarBillingClient,
+  createPaymentClient,
   SANDBOX_API_BASE_URL,
 } from './infrastructure/services/billing.client';
 export type {
   BillingClientConfig,
+  PaymentClientConfig,
+  PaymentServerClient,
   CheckoutSessionParams,
   CheckoutSession,
   CheckoutMetadata,
@@ -14,8 +18,16 @@ export type {
 } from './infrastructure/services/billing.client';
 
 export {
+  PAYMENT_PROVIDER,
+  PAYMENT_PROVIDER_VALUES,
+  isKnownPaymentProvider,
+} from './domain/enums/payment-provider.enum';
+export type { PaymentProvider } from './domain/enums/payment-provider.enum';
+
+export {
   DEFAULT_WEBHOOK_TOLERANCE_MS,
   verifyWebhook,
+  verifyPolarWebhook,
 } from './infrastructure/webhook/verify-webhook';
 export type {
   WebhookHeadersLike,
@@ -24,6 +36,7 @@ export type {
 
 export {
   parseWebhookEvent,
+  parsePolarWebhookEvent,
   asCheckoutCompleted,
   asSubscriptionChanged,
   asOrderPaid,
@@ -47,7 +60,20 @@ export {
 } from './infrastructure/config/billing-env';
 export type { ProductIdMap } from './infrastructure/config/billing-env';
 
-export { createBillingClient, sandboxEnabled } from './infrastructure/services/create-billing-client';
+export {
+  createBillingClient,
+  createPolarClient,
+  sandboxEnabled,
+} from './infrastructure/services/create-billing-client';
 
-export { readCheckoutMetadata } from './infrastructure/utils/checkout-metadata';
-export type { CheckoutOrderMetadata } from './infrastructure/utils/checkout-metadata';
+export {
+  buildCheckoutMetadata,
+  readCheckoutMetadata,
+} from './infrastructure/utils/checkout-metadata';
+export type {
+  BuildCheckoutMetadataInput,
+  CheckoutOrderMetadata,
+} from './infrastructure/utils/checkout-metadata';
+
+export { formatReceiptNumber } from './infrastructure/utils/receipt.util';
+

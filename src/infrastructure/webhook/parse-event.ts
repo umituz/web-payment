@@ -131,3 +131,5 @@ export function asOrderPaid(event: WebhookEvent): OrderPaid | null {
         createdAt: readString(data.created_at) ?? readString(data.paid_at),
     };
 }
+
+export const parsePolarWebhookEvent = parseWebhookEvent;

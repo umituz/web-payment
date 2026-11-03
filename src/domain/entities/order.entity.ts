@@ -5,6 +5,11 @@ export interface OrderItem {
   currency: string;
   status: string;
   paid: boolean;
-  productName: string;
+  productName?: string;
+  itemType?: string;
+  itemId?: string;
+  amountUsd?: number;
+  receiptNumber?: string;
   invoiceUrl?: string;
 }
+

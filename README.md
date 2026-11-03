@@ -1,17 +1,19 @@
-# @umituz/web-polar-payment
+# @umituz/web-payment
 
-Polar.sh subscription billing SDK with an HTTP adapter, a turnkey billing
-portal and React bindings.
+Universal web payment and subscription billing engine with multi-provider architecture (Polar.sh, Stripe, etc.), an HTTP adapter, a turnkey billing portal, and React bindings.
 
-The SDK is split into an **adapter-agnostic core** (`BillingAdapter` contract)
+The SDK is split into an **adapter-agnostic core** (`BillingAdapter` contract, payment models, calculation primitives)
 and a **React presentation layer** (`BillingProvider`, `useBilling`).
-The HTTP adapter binds the contract to your own API; any other backend can
+The HTTP adapter binds the contract to your own API; any payment backend can
 be plugged in by implementing the same interface.
 
 ## Features
 
-- Adapter-agnostic core (`BillingAdapter` interface)
+- Multi-provider architecture with adapter-agnostic core (`BillingAdapter`, `PaymentServerClient`)
+- Polar.sh client & webhook verification (`PolarBillingClient`, `verifyPolarWebhook`)
+- Extensible for Stripe and future payment gateways
 - HTTP adapter for your own REST backend (`createHttpAdapter`)
+- Common checkout utilities (`buildCheckoutMetadata`, `readCheckoutMetadata`, `formatReceiptNumber`)
 - Polar.sh product catalog (`getProducts`, `getProductById`, `getAllProducts`)
 - React provider + hooks (`BillingProvider`, `useBilling`, `useProducts`)
 - Ready-made UI: pricing table, checkout button, status badge, billing
@@ -22,7 +24,7 @@ be plugged in by implementing the same interface.
 ## Installation
 
 ```bash
-npm install @umituz/web-polar-payment
+npm install @umituz/web-payment
 ```
 
 Peers are **optional** — install only what you use:

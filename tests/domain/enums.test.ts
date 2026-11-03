@@ -11,6 +11,11 @@ import {
   parseBillingCycle,
 } from '../../src/domain/enums/billing-cycle.enum';
 import { POLAR_AMOUNT_TYPE } from '../../src/domain/enums/amount-type.enum';
+import {
+  PAYMENT_PROVIDER,
+  PAYMENT_PROVIDER_VALUES,
+  isKnownPaymentProvider,
+} from '../../src/domain/enums/payment-provider.enum';
 
 describe('subscription status enum', () => {
   it('exposes the full status set', () => {
@@ -59,5 +64,21 @@ describe('amount type enum', () => {
   it('covers the documented amount types', () => {
     expect(POLAR_AMOUNT_TYPE.FIXED).toBe('fixed');
     expect(POLAR_AMOUNT_TYPE.METERED_UNIT).toBe('metered_unit');
+  });
+});
+
+describe('payment provider enum', () => {
+  it('exposes supported payment providers', () => {
+    expect(PAYMENT_PROVIDER_VALUES).toEqual(['polar', 'stripe']);
+    expect(PAYMENT_PROVIDER.POLAR).toBe('polar');
+    expect(PAYMENT_PROVIDER.STRIPE).toBe('stripe');
+  });
+
+  it('validates provider names', () => {
+    expect(isKnownPaymentProvider('polar')).toBe(true);
+    expect(isKnownPaymentProvider('stripe')).toBe(true);
+    expect(isKnownPaymentProvider('paypal')).toBe(false);
+    expect(isKnownPaymentProvider('')).toBe(false);
+    expect(isKnownPaymentProvider(null)).toBe(false);
   });
 });

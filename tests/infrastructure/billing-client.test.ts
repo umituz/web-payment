@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { BillingClient } from '../../src/infrastructure/services/billing.client';
+import {
+  BillingClient,
+  PolarBillingClient,
+  createPaymentClient,
+} from '../../src/infrastructure/services/billing.client';
+import {
+  createBillingClient,
+  createPolarClient,
+} from '../../src/infrastructure/services/create-billing-client';
 import { BillingApiError } from '../../src/infrastructure/services/product.repository';
 import type { HttpClient, HttpRequest, HttpResponse } from '../../src/infrastructure/http/http-client';
 
@@ -205,5 +213,20 @@ describe('BillingClient', () => {
     expect(thrown).toBeInstanceOf(BillingApiError);
     expect((thrown as BillingApiError).status).toBe(404);
     expect((thrown as BillingApiError).body).toContain('not found');
+  });
+
+  it('instantiates Polar client via createPaymentClient factory and createPolarClient', () => {
+    const defaultClient = createPaymentClient({ apiToken: 'token_1' });
+    expect(defaultClient).toBeInstanceOf(PolarBillingClient);
+    expect(defaultClient.provider).toBe('polar');
+
+    const polarClient = createPolarClient({ apiToken: 'token_2', sandbox: true });
+    expect(polarClient).toBeInstanceOf(PolarBillingClient);
+    expect(polarClient).toBeInstanceOf(BillingClient);
+
+    const legacyClient = createBillingClient({ apiToken: 'token_3', sandbox: 'false' });
+    expect(legacyClient).toBeInstanceOf(BillingClient);
+
+    expect(() => createPaymentClient({ provider: 'stripe', apiKey: 'sk_test' })).toThrow(/not yet supported/);
   });
 });

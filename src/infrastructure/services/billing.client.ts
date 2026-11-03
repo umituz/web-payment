@@ -1,8 +1,20 @@
+import type { PaymentProvider } from '../../domain/enums/payment-provider.enum';
 import { API_BASE_URL } from '../constants/billing.constants';
 import { HttpClient, FetchHttpClient } from '../http/http-client';
 import { BillingApiError } from './product.repository';
 
 export const SANDBOX_API_BASE_URL = 'https://sandbox-api.polar.sh/v1';
+
+export interface PaymentServerClient {
+  readonly provider: PaymentProvider;
+  createProduct?(params: CreateProductParams): Promise<CreatedProduct>;
+  createCheckout(params: CheckoutSessionParams): Promise<CheckoutSession>;
+  getCheckout(id: string): Promise<CheckoutSession>;
+  createPortalSession?(customerId: string, returnUrl?: string): Promise<PortalSession>;
+  getSubscription?(id: string): Promise<SubscriptionRecord>;
+  listSubscriptions?(filter?: { customerId?: string; productId?: string }): Promise<SubscriptionRecord[]>;
+  updateSubscription?(id: string, patch: { cancelAtPeriodEnd?: boolean }): Promise<SubscriptionRecord>;
+}
 
 export interface BillingClientConfig {
   apiToken: string;
@@ -139,7 +151,8 @@ function mapSubscription(dto: SubscriptionDto): SubscriptionRecord {
   };
 }
 
-export class BillingClient {
+export class PolarBillingClient implements PaymentServerClient {
+  readonly provider = 'polar' as const;
   private readonly http: HttpClient;
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
@@ -270,4 +283,18 @@ export class BillingClient {
     );
     return mapSubscription(dto);
   }
+}
+
+export const BillingClient = PolarBillingClient;
+export type BillingClient = PolarBillingClient;
+
+export type PaymentClientConfig =
+  | ({ provider?: 'polar' } & BillingClientConfig)
+  | { provider: 'stripe'; apiKey: string; [key: string]: unknown };
+
+export function createPaymentClient(config: PaymentClientConfig): PaymentServerClient {
+  if (config.provider === 'stripe') {
+    throw new Error('Stripe provider client is not yet supported. Use provider "polar" or custom adapter.');
+  }
+  return new PolarBillingClient(config);
 }

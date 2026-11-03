@@ -80,7 +80,7 @@ function orderToInvoice(order: OrderItem): Invoice {
     ...(order.invoiceUrl ? { invoiceUrl: order.invoiceUrl } : {}),
     items: [
       {
-        description: order.productName,
+        description: order.productName ?? order.itemType ?? 'Subscription',
         quantity: 1,
         unitPrice: order.amount,
         amount: order.amount,

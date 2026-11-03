@@ -1,7 +1,10 @@
 import type { BillingCycle } from '../enums/billing-cycle.enum';
 
 export interface CheckoutParams {
-  productId: string;
+  productId?: string;
+  productKey?: string;
+  itemId?: string;
+  couponCode?: string;
   planKey?: string;
   billingCycle?: BillingCycle;
   successUrl?: string;
@@ -15,3 +18,4 @@ export interface CheckoutResult {
   url: string;
   id: string;
 }
+
