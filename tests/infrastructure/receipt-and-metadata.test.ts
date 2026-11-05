@@ -17,8 +17,7 @@ describe('formatReceiptNumber', () => {
 
   it('handles invalid or empty inputs gracefully', () => {
     expect(formatReceiptNumber('', 'RCP')).toBe('RCP-00000000');
-    // @ts-expect-error testing invalid type
-    expect(formatReceiptNumber(null, 'RCP')).toBe('RCP-00000000');
+    expect(formatReceiptNumber(null as unknown as string, 'RCP')).toBe('RCP-00000000');
   });
 });
 

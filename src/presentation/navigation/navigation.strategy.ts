@@ -10,7 +10,5 @@ export class WindowNavigationStrategy implements NavigationStrategy {
 }
 
 export class NoopNavigationStrategy implements NavigationStrategy {
-  redirect(_url: string): void {
-    /* intentionally no-op */
-  }
+  redirect(_url: string): void {}
 }

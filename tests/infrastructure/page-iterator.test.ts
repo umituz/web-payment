@@ -99,10 +99,12 @@ describe('PageIterator', () => {
       },
     };
 
-    for await (const _ of new PageIterator<number>(fetcher, { limit: 7 })) {
-      // drain
+    const seen: number[] = [];
+    for await (const item of new PageIterator<number>(fetcher, { limit: 7 })) {
+      seen.push(item);
     }
 
+    expect(seen).toEqual([]);
     expect(limits).toEqual([7]);
   });
 });
