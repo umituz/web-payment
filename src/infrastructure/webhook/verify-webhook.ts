@@ -55,7 +55,7 @@ async function hmacSha256(keyBytes: Uint8Array, payload: string): Promise<string
   const signature = await cryptoRef.subtle.sign('HMAC', key, encodeUtf8(payload) as BufferSource);
   const bytes = new Uint8Array(signature);
   let binary = '';
-  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i] ?? 0);
   return btoa(binary);
 }
 

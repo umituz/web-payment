@@ -41,10 +41,10 @@ describe('BillingClient', () => {
 
     expect(checkout).toMatchObject({ id: 'co_1', url: 'https://polar.sh/checkout/co_1' });
     const call = http.calls[0];
-    expect(call.method).toBe('POST');
-    expect(call.url).toBe('https://api.polar.sh/v1/checkouts');
-    expect(call.headers?.Authorization).toBe('Bearer oat_test');
-    expect(call.body).toEqual({
+    expect(call?.method).toBe('POST');
+    expect(call?.url).toBe('https://api.polar.sh/v1/checkouts');
+    expect(call?.headers?.Authorization).toBe('Bearer oat_test');
+    expect(call?.body).toEqual({
       products: ['prod_1'],
       success_url: 'https://app.example/billing/return?checkout_id={CHECKOUT_ID}',
       metadata: { tenant: 'org_1' },
@@ -64,7 +64,7 @@ describe('BillingClient', () => {
       customerEmail: 'learner@example.test',
     });
 
-    expect(http.calls[0].body).toEqual({
+    expect(http.calls[0]?.body).toEqual({
       products: ['prod_booking'],
       prices: {
         prod_booking: [
@@ -81,7 +81,7 @@ describe('BillingClient', () => {
     const http = httpClientReturning({ id: 'co_2', url: 'https://sandbox.polar.sh/checkout/co_2' });
     const client = new BillingClient({ apiToken: 'oat_test', sandbox: true, http });
     await client.createCheckout({ productId: 'prod_1' });
-    expect(http.calls[0].url.startsWith('https://sandbox-api.polar.sh/v1')).toBe(true);
+    expect(http.calls[0]?.url.startsWith('https://sandbox-api.polar.sh/v1')).toBe(true);
   });
 
   it('creates a one-time product with a fixed price in cents', async () => {
@@ -97,9 +97,9 @@ describe('BillingClient', () => {
 
     expect(product).toEqual({ id: 'prod_9', name: 'Ultralight Gear Course' });
     const call = http.calls[0];
-    expect(call.method).toBe('POST');
-    expect(call.url).toBe('https://api.polar.sh/v1/products');
-    expect(call.body).toEqual({
+    expect(call?.method).toBe('POST');
+    expect(call?.url).toBe('https://api.polar.sh/v1/products');
+    expect(call?.body).toEqual({
       name: 'Ultralight Gear Course',
       recurring_interval: null,
       description: 'Six chapters, 4K lessons.',
@@ -148,12 +148,12 @@ describe('BillingClient', () => {
     const client = new BillingClient({ apiToken: 'oat_test', http });
 
     await client.updateSubscription('sub_1', { cancelAtPeriodEnd: true });
-    expect(http.calls[0].method).toBe('PATCH');
-    expect(http.calls[0].url).toBe('https://api.polar.sh/v1/subscriptions/sub_1');
-    expect(http.calls[0].body).toEqual({ cancel_at_period_end: true });
+    expect(http.calls[0]?.method).toBe('PATCH');
+    expect(http.calls[0]?.url).toBe('https://api.polar.sh/v1/subscriptions/sub_1');
+    expect(http.calls[0]?.body).toEqual({ cancel_at_period_end: true });
 
     await client.listSubscriptions({ customerId: 'cus_9' });
-    expect(http.calls[1].url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9');
+    expect(http.calls[1]?.url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9');
   });
 
   it('creates a portal session and surfaces a missing URL as an error', async () => {
@@ -161,8 +161,8 @@ describe('BillingClient', () => {
     const client = new BillingClient({ apiToken: 'oat_test', http });
     const portal = await client.createPortalSession('cus_1', 'https://app.example/billing');
     expect(portal.url).toContain('customer.polar.sh');
-    expect(http.calls[0].url).toBe('https://api.polar.sh/v1/customer-sessions');
-    expect(http.calls[0].body).toEqual({
+    expect(http.calls[0]?.url).toBe('https://api.polar.sh/v1/customer-sessions');
+    expect(http.calls[0]?.body).toEqual({
       customer_id: 'cus_1',
       return_url: 'https://app.example/billing',
     });
@@ -202,8 +202,8 @@ describe('BillingClient', () => {
     const records = await client.listSubscriptions({ customerId: 'cus_9' });
 
     expect(records.map((record) => record.id)).toEqual(['sub_1', 'sub_2']);
-    expect(calls[0].url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9');
-    expect(calls[1].url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9&page=2');
+    expect(calls[0]?.url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9');
+    expect(calls[1]?.url).toBe('https://api.polar.sh/v1/subscriptions?customer_id=cus_9&page=2');
   });
 
   it('wraps non-2xx responses in BillingApiError with the body attached', async () => {

@@ -87,7 +87,7 @@ describe('transformProducts', () => {
       }),
     ]);
     expect(plans).toHaveLength(1);
-    expect(plans[0].id).toBe('prod_ok');
+    expect(plans[0]?.id).toBe('prod_ok');
   });
 
   it('emits one tier per product, pairing both real prices', () => {
@@ -112,8 +112,8 @@ describe('transformProducts', () => {
         ],
       }),
     ]);
-    expect(plans[0].yearlyPrice).toBe(9000);
-    expect(plans[0].monthlyPrice).toBe(1000);
+    expect(plans[0]?.yearlyPrice).toBe(9000);
+    expect(plans[0]?.monthlyPrice).toBe(1000);
   });
 
   it('derives the missing figure for a single-priced product', () => {
@@ -121,15 +121,15 @@ describe('transformProducts', () => {
       product({ prices: [price({ recurringInterval: 'monthly' })] }),
     ]);
     expect(monthlyOnly).toHaveLength(1);
-    expect(monthlyOnly[0].monthlyPrice).toBe(1200);
-    expect(monthlyOnly[0].yearlyPrice).toBe(14400);
+    expect(monthlyOnly[0]?.monthlyPrice).toBe(1200);
+    expect(monthlyOnly[0]?.yearlyPrice).toBe(14400);
 
     const yearlyOnly = transformProducts([
       product({ prices: [price({ amount: 12000, recurringInterval: 'yearly' })] }),
     ]);
     expect(yearlyOnly).toHaveLength(1);
-    expect(yearlyOnly[0].monthlyPrice).toBe(1000);
-    expect(yearlyOnly[0].yearlyPrice).toBe(12000);
+    expect(yearlyOnly[0]?.monthlyPrice).toBe(1000);
+    expect(yearlyOnly[0]?.yearlyPrice).toBe(12000);
   });
 
   it('skips products with no recurring price', () => {

@@ -173,7 +173,8 @@ const BillingPortalBody = ({
                         e.key === 'ArrowRight'
                           ? (idx + 1) % TABS.length
                           : (idx - 1 + TABS.length) % TABS.length;
-                      onTabChange?.(TABS[nextIdx].id);
+                      const nextTab = TABS[nextIdx];
+                      if (nextTab) onTabChange?.(nextTab.id);
                     }
                   }}
                   style={{

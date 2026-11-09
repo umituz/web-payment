@@ -25,8 +25,8 @@ describe('createHttpAdapter', () => {
 
     const status = await adapter.getStatus('org_1');
     expect(status).toEqual({ plan: 'pro', subscriptionStatus: 'active' });
-    expect(captured[0].url).toBe('/api/billing/status?userId=org_1');
-    expect(captured[0].init.method).toBe('GET');
+    expect(captured[0]?.url).toBe('/api/billing/status?userId=org_1');
+    expect(captured[0]?.init.method).toBe('GET');
   });
 
   it('falls back to getUserId when the SDK passes no id', async () => {
@@ -34,8 +34,8 @@ describe('createHttpAdapter', () => {
     const adapter = createHttpAdapter({ fetchImpl, getUserId: () => 'org_2' });
 
     await adapter.syncSubscription('');
-    expect(captured[0].url).toBe('/api/billing/sync');
-    expect(JSON.parse(String(captured[0].init.body))).toEqual({ userId: 'org_2' });
+    expect(captured[0]?.url).toBe('/api/billing/sync');
+    expect(JSON.parse(String(captured[0]?.init.body))).toEqual({ userId: 'org_2' });
   });
 
   it('posts checkout parameters as JSON', async () => {
@@ -44,8 +44,8 @@ describe('createHttpAdapter', () => {
 
     const result = await adapter.createCheckout({ productId: 'prod_1', billingCycle: 'monthly' });
     expect(result).toEqual({ id: 'co_1', url: 'https://polar.sh/checkout/co_1' });
-    expect(captured[0].init.method).toBe('POST');
-    expect(JSON.parse(String(captured[0].init.body))).toEqual({
+    expect(captured[0]?.init.method).toBe('POST');
+    expect(JSON.parse(String(captured[0]?.init.body))).toEqual({
       productId: 'prod_1',
       billingCycle: 'monthly',
     });
@@ -76,6 +76,6 @@ describe('createHttpAdapter', () => {
     const { fetchImpl, captured } = fetchReturning({ plan: 'free', subscriptionStatus: 'none' });
     const adapter = createHttpAdapter({ fetchImpl, getHeaders: () => ({ 'X-Trace': 't1' }) });
     await adapter.getStatus('u');
-    expect(new Headers(captured[0].init.headers).get('X-Trace')).toBe('t1');
+    expect(new Headers(captured[0]?.init.headers).get('X-Trace')).toBe('t1');
   });
 });

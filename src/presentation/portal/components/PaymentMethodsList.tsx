@@ -16,18 +16,20 @@ import { PortalButton } from './PortalButton';
 import { PortalSpinner } from './PortalSpinner';
 import { alertDanger, mutedText, row, stack, visuallyHidden } from '../styles';
 
+const DEFAULT_CARD_GRADIENT = 'linear-gradient(135deg, #334155, #64748b)';
+
 const BRAND_GRADIENT: Record<string, string> = {
   visa: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
   mastercard: 'linear-gradient(135deg, #f97316, #ef4444)',
   amex: 'linear-gradient(135deg, #0e7490, #06b6d4)',
   discover: 'linear-gradient(135deg, #f59e0b, #f97316)',
-  default: 'linear-gradient(135deg, #334155, #64748b)',
+  default: DEFAULT_CARD_GRADIENT,
 };
 
 const cardGradient = (brand: string | undefined): string => {
-  if (!brand) return BRAND_GRADIENT.default;
+  if (!brand) return DEFAULT_CARD_GRADIENT;
   const key = brand.toLowerCase();
-  return BRAND_GRADIENT[key] ?? BRAND_GRADIENT.default;
+  return BRAND_GRADIENT[key] ?? DEFAULT_CARD_GRADIENT;
 };
 
 export const PaymentMethodsList = ({

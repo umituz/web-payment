@@ -139,7 +139,7 @@ describe('sortInvoicesByDate', () => {
       makeInvoice('1', 'paid', 10, '2026-01-01'),
       makeInvoice('2', 'paid', 10, '2026-03-01'),
     ]);
-    expect(sorted[0].id).toBe('2');
+    expect(sorted[0]?.id).toBe('2');
   });
 
   it('sorts ascending on request', () => {
@@ -150,7 +150,7 @@ describe('sortInvoicesByDate', () => {
       ],
       'asc',
     );
-    expect(sorted[0].id).toBe('1');
+    expect(sorted[0]?.id).toBe('1');
   });
 
   it('does not mutate the input array', () => {
@@ -159,7 +159,7 @@ describe('sortInvoicesByDate', () => {
       makeInvoice('2', 'paid', 10, '2026-03-01'),
     ];
     sortInvoicesByDate(input);
-    expect(input[0].id).toBe('1');
+    expect(input[0]?.id).toBe('1');
   });
 });
 

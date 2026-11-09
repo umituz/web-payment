@@ -74,7 +74,7 @@ describe('CheckoutButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Upgrade' }));
 
     await waitFor(() => expect(adapterImpl.createCheckout).toHaveBeenCalled());
-    const call = (adapterImpl.createCheckout as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const call = (adapterImpl.createCheckout as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
     expect(call.productId).toBe('prod_1');
     expect(call.userId).toBe('user_1');
   });

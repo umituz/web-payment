@@ -61,8 +61,8 @@ describe('createMemoryBillingAdapter', () => {
 
     const history = await adapter.getBillingHistory('user_1');
     expect(history.length).toBe(1);
-    expect(history[0].productName).toBe('pro_10');
-    expect(history[0].paid).toBe(true);
+    expect(history[0]?.productName).toBe('pro_10');
+    expect(history[0]?.paid).toBe(true);
   });
 
   it('reports not synced when there is no checkout to fulfill', async () => {
