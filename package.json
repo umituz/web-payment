@@ -1,6 +1,6 @@
 {
   "name": "@umituz/web-payment",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Universal web payment & subscription billing engine with multi-provider architecture (Polar, Stripe, etc.)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
