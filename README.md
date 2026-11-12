@@ -14,6 +14,12 @@ be plugged in by implementing the same interface.
 - Extensible for Stripe and future payment gateways
 - HTTP adapter for your own REST backend (`createHttpAdapter`)
 - Common checkout utilities (`buildCheckoutMetadata`, `readCheckoutMetadata`, `formatReceiptNumber`)
+- Billing calculation primitives: minor units, percent discounts, coupon
+  catalogs (`createCouponCatalog`), multi-currency conversion
+  (`convertAmount`, `currencyForLanguage`), product-key codec
+  (`parseProductKey`, `buildProductKey`), subscription lifecycle
+  normalization (`normalizeSubscriptionLifecycle`) and paid-order records
+  (`buildPaidOrderRecord`)
 - Polar.sh product catalog (`getProducts`, `getProductById`, `getAllProducts`)
 - React provider + hooks (`BillingProvider`, `useBilling`, `useProducts`)
 - Ready-made UI: pricing table, checkout button, status badge, billing

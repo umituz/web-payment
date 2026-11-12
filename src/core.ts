@@ -68,6 +68,51 @@ export {
   normalizeCouponCode,
 } from './domain/utils/percent-discount';
 
+export {
+  CURRENCIES,
+  CURRENCY_CONFIGS,
+  DEFAULT_EXCHANGE_RATES,
+  DEFAULT_LANGUAGE_CURRENCY_MAP,
+  convertAmount,
+  currencyForLanguage,
+  isSupportedCurrency,
+  isZeroDecimalCurrency,
+} from './domain/utils/currency';
+export type {
+  SupportedCurrency,
+  CurrencyConfig,
+} from './domain/utils/currency';
+
+export { createCouponCatalog } from './domain/utils/coupon-catalog';
+export type {
+  CouponCatalog,
+  CouponCatalogOptions,
+} from './domain/utils/coupon-catalog';
+
+export {
+  buildProductKey,
+  parseProductKey,
+  productKeyPrefix,
+} from './domain/utils/product-key';
+export type { ParsedProductKey } from './domain/utils/product-key';
+
+export {
+  isActiveLifecycle,
+  isTerminalLifecycle,
+  normalizeSubscriptionLifecycle,
+} from './domain/utils/subscription-lifecycle';
+export type {
+  SubscriptionLifecycle,
+  SubscriptionLifecycleStatus,
+} from './domain/utils/subscription-lifecycle';
+
+export { buildPaidOrderRecord } from './infrastructure/utils/order-record';
+export type {
+  BuildPaidOrderRecordInput,
+  BuildPaidOrderRecordOptions,
+  PaidOrderRecord,
+} from './infrastructure/utils/order-record';
+
 export { formatReceiptNumber } from './infrastructure/utils/receipt.util';
 
 export {
