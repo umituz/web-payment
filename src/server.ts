@@ -15,6 +15,9 @@ export type {
   CreatedProduct,
   SubscriptionRecord,
   PortalSession,
+  PaymentRecord,
+  CreateRefundParams,
+  RefundRecord,
 } from './infrastructure/services/billing.client';
 
 export {
@@ -40,12 +43,19 @@ export {
   asCheckoutCompleted,
   asSubscriptionChanged,
   asOrderPaid,
+  asOrderRefunded,
+  asSubscriptionCycled,
+  asRefundCreated,
+  asRefundUpdated,
 } from './infrastructure/webhook/parse-event';
 export type {
   WebhookEvent,
   CheckoutCompleted,
   SubscriptionChanged,
   OrderPaid,
+  OrderRefunded,
+  SubscriptionCycled,
+  RefundEvent,
 } from './infrastructure/webhook/parse-event';
 
 export { BillingApiError, isBillingApiError } from './infrastructure/services/product.repository';

@@ -36,6 +36,30 @@ export interface OrderPaid {
     metadata: Record<string, string>;
     createdAt: string | null;
 }
+/** order.refunded carries the same shape as order.paid in Polar payloads. */
+export type OrderRefunded = OrderPaid;
+export interface SubscriptionCycled {
+    subscriptionId: string | null;
+    status: string | null;
+    productId: string | null;
+    amount: number | null;
+    currency: string | null;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    customerId: string | null;
+    metadata: Record<string, string>;
+}
+export interface RefundEvent {
+    refundId: string | null;
+    status: string | null;
+    amount: number | null;
+    currency: string | null;
+    paymentId: string | null;
+    orderId: string | null;
+    reason: string | null;
+    metadata: Record<string, string>;
+    createdAt: string | null;
+}
 const SUBSCRIPTION_EVENT_TYPES = new Set([
     'subscription.active',
     'subscription.canceled',
@@ -130,6 +154,65 @@ export function asOrderPaid(event: WebhookEvent): OrderPaid | null {
         metadata: readMetadata(data.metadata),
         createdAt: readString(data.created_at) ?? readString(data.paid_at),
     };
+}
+
+export function asOrderRefunded(event: WebhookEvent): OrderRefunded | null {
+    if (event.type !== 'order.refunded')
+        return null;
+    return asOrderPaid({ ...event, type: 'order.paid' });
+}
+
+/**
+ * subscription.cycled: a recurring product billed another period. Deliberately
+ * NOT part of asSubscriptionChanged — cycling is a renewal fact, not a status
+ * change, and consumers grant per-cycle entitlements off this event.
+ */
+export function asSubscriptionCycled(event: WebhookEvent): SubscriptionCycled | null {
+    if (event.type !== 'subscription.cycled')
+        return null;
+    const data = event.data;
+    const minorUnits = readNumber(data.amount);
+    const currency = readString(data.currency);
+    return {
+        subscriptionId: readString(data.id),
+        status: readString(data.status),
+        productId: readString(data.product_id),
+        amount: minorUnits !== null && currency ? toMajorUnits(minorUnits, currency) : null,
+        currency,
+        currentPeriodStart: readString(data.current_period_start),
+        currentPeriodEnd: readString(data.current_period_end),
+        customerId: readString(data.customer_id),
+        metadata: readMetadata(data.metadata),
+    };
+}
+
+function refundFromEvent(event: WebhookEvent): RefundEvent | null {
+    const data = event.data;
+    const minorUnits = readNumber(data.amount);
+    const currency = readString(data.currency);
+    return {
+        refundId: readString(data.id),
+        status: readString(data.status),
+        amount: minorUnits !== null && currency ? toMajorUnits(minorUnits, currency) : null,
+        currency,
+        paymentId: readString(data.payment_id),
+        orderId: readString(data.order_id),
+        reason: readString(data.reason),
+        metadata: readMetadata(data.metadata),
+        createdAt: readString(data.created_at),
+    };
+}
+
+export function asRefundCreated(event: WebhookEvent): RefundEvent | null {
+    if (event.type !== 'refund.created')
+        return null;
+    return refundFromEvent(event);
+}
+
+export function asRefundUpdated(event: WebhookEvent): RefundEvent | null {
+    if (event.type !== 'refund.updated')
+        return null;
+    return refundFromEvent(event);
 }
 
 export const parsePolarWebhookEvent = parseWebhookEvent;

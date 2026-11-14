@@ -14,6 +14,9 @@ export interface PaymentServerClient {
   getSubscription?(id: string): Promise<SubscriptionRecord>;
   listSubscriptions?(filter?: { customerId?: string; productId?: string }): Promise<SubscriptionRecord[]>;
   updateSubscription?(id: string, patch: { cancelAtPeriodEnd?: boolean }): Promise<SubscriptionRecord>;
+  listPayments?(filter?: { orderId?: string }): Promise<PaymentRecord[]>;
+  createRefund?(params: CreateRefundParams): Promise<RefundRecord>;
+  listRefunds?(filter?: { paymentId?: string; orderId?: string }): Promise<RefundRecord[]>;
 }
 
 export interface BillingClientConfig {
@@ -72,12 +75,48 @@ export interface CreateProductParams {
   description?: string;
   amountCents: number;
   currency?: string;
+  /** Polar recurring_interval; omit/undefined for one-time products. */
+  recurringInterval?: 'week' | 'month' | 'year';
   metadata?: CheckoutMetadata;
 }
 
 export interface CreatedProduct {
   id: string;
   name: string;
+}
+
+/** Provider payment for a paid order (Polar: captured card charges). */
+export interface PaymentRecord {
+  id: string;
+  status: string;
+  amountCents: number;
+  currency: string;
+  orderId?: string;
+  subscriptionId?: string;
+  createdAt?: string;
+}
+
+export interface CreateRefundParams {
+  /** Refund one payment of an order; either id works, at least one required. */
+  paymentId?: string;
+  orderId?: string;
+  /** Minor units; omit for a full refund of the payment. */
+  amountCents?: number;
+  reason?: string;
+  metadata?: CheckoutMetadata;
+}
+
+export interface RefundRecord {
+  id: string;
+  /** pending | succeeded | failed — provider wording, mapped verbatim. */
+  status: string;
+  amountCents: number;
+  currency: string;
+  paymentId?: string;
+  orderId?: string;
+  reason?: string;
+  metadata: Record<string, string>;
+  createdAt?: string;
 }
 
 interface ProductDto {
@@ -116,6 +155,38 @@ interface SubscriptionListDto {
   pagination?: { max_page?: number; current_page?: number; total_count?: number };
 }
 
+interface PaymentDto {
+  id: string;
+  status?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  order_id?: string | null;
+  subscription_id?: string | null;
+  created_at?: string | null;
+}
+
+interface PaymentListDto {
+  items?: PaymentDto[];
+  pagination?: { max_page?: number; current_page?: number; total_count?: number };
+}
+
+interface RefundDto {
+  id: string;
+  status?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  payment_id?: string | null;
+  order_id?: string | null;
+  reason?: string | null;
+  metadata?: Record<string, string> | null;
+  created_at?: string | null;
+}
+
+interface RefundListDto {
+  items?: RefundDto[];
+  pagination?: { max_page?: number; current_page?: number; total_count?: number };
+}
+
 function resolveBaseUrl(config: BillingClientConfig): string {
   if (config.baseUrl) return config.baseUrl;
   return config.sandbox ? SANDBOX_API_BASE_URL : API_BASE_URL;
@@ -151,6 +222,32 @@ function mapSubscription(dto: SubscriptionDto): SubscriptionRecord {
   };
 }
 
+function mapPayment(dto: PaymentDto): PaymentRecord {
+  return {
+    id: dto.id,
+    status: dto.status ?? 'unknown',
+    amountCents: dto.amount ?? 0,
+    currency: dto.currency ?? 'usd',
+    orderId: dto.order_id ?? undefined,
+    subscriptionId: dto.subscription_id ?? undefined,
+    createdAt: dto.created_at ?? undefined,
+  };
+}
+
+function mapRefund(dto: RefundDto): RefundRecord {
+  return {
+    id: dto.id,
+    status: dto.status ?? 'unknown',
+    amountCents: dto.amount ?? 0,
+    currency: dto.currency ?? 'usd',
+    paymentId: dto.payment_id ?? undefined,
+    orderId: dto.order_id ?? undefined,
+    reason: dto.reason ?? undefined,
+    metadata: dto.metadata ?? {},
+    createdAt: dto.created_at ?? undefined,
+  };
+}
+
 export class PolarBillingClient implements PaymentServerClient {
   readonly provider = 'polar' as const;
   private readonly http: HttpClient;
@@ -183,7 +280,7 @@ export class PolarBillingClient implements PaymentServerClient {
   async createProduct(params: CreateProductParams): Promise<CreatedProduct> {
     const dto = await this.request<ProductDto>('POST', '/products', {
       name: params.name,
-      recurring_interval: null,
+      recurring_interval: params.recurringInterval ?? null,
       ...(params.description ? { description: params.description } : {}),
       prices: [
         {
@@ -255,17 +352,10 @@ export class PolarBillingClient implements PaymentServerClient {
     const query = new URLSearchParams();
     if (filter.customerId) query.set('customer_id', filter.customerId);
     if (filter.productId) query.set('product_id', filter.productId);
-    const suffix = query.size > 0 ? `?${query.toString()}` : '';
-    const first = await this.request<SubscriptionListDto>('GET', `/subscriptions${suffix}`);
-    const records: SubscriptionDto[] = [...(first.items ?? [])];
-    const maxPage = typeof first.pagination?.max_page === 'number' ? first.pagination.max_page : 1;
-    for (let page = 2; page <= maxPage; page += 1) {
-      const next = await this.request<SubscriptionListDto>(
-        'GET',
-        `/subscriptions${suffix}${suffix ? '&' : '?'}page=${page}`,
-      );
-      records.push(...(next.items ?? []));
-    }
+    const records = await this.listPaginated<SubscriptionDto, SubscriptionListDto>(
+      '/subscriptions',
+      query,
+    );
     return records.map(mapSubscription);
   }
 
@@ -282,6 +372,55 @@ export class PolarBillingClient implements PaymentServerClient {
       body,
     );
     return mapSubscription(dto);
+  }
+
+  /** Payments of an order (captured charges a refund would target). */
+  async listPayments(filter: { orderId?: string } = {}): Promise<PaymentRecord[]> {
+    const query = new URLSearchParams();
+    if (filter.orderId) query.set('order_id', filter.orderId);
+    const records = await this.listPaginated<PaymentDto, PaymentListDto>('/payments', query);
+    return records.map(mapPayment);
+  }
+
+  async createRefund(params: CreateRefundParams): Promise<RefundRecord> {
+    if (!params.paymentId && !params.orderId) {
+      throw new BillingApiError('Refund requires a paymentId or orderId', 400);
+    }
+    const dto = await this.request<RefundDto>('POST', '/refunds', {
+      ...(params.paymentId ? { payment_id: params.paymentId } : {}),
+      ...(params.orderId ? { order_id: params.orderId } : {}),
+      ...(params.amountCents !== undefined ? { amount: params.amountCents } : {}),
+      ...(params.reason ? { reason: params.reason } : {}),
+      ...(params.metadata ? { metadata: params.metadata } : {}),
+    });
+    return mapRefund(dto);
+  }
+
+  async listRefunds(filter: { paymentId?: string; orderId?: string } = {}): Promise<RefundRecord[]> {
+    const query = new URLSearchParams();
+    if (filter.paymentId) query.set('payment_id', filter.paymentId);
+    if (filter.orderId) query.set('order_id', filter.orderId);
+    const records = await this.listPaginated<RefundDto, RefundListDto>('/refunds', query);
+    return records.map(mapRefund);
+  }
+
+  /** Shared page walker for the list endpoints (subscriptions/payments/refunds). */
+  private async listPaginated<T, P extends { items?: T[]; pagination?: { max_page?: number } }>(
+    path: string,
+    query: URLSearchParams,
+  ): Promise<T[]> {
+    const suffix = query.size > 0 ? `?${query.toString()}` : '';
+    const first = await this.request<P>('GET', `${path}${suffix}`);
+    const records: T[] = [...(first.items ?? [])];
+    const maxPage = typeof first.pagination?.max_page === 'number' ? first.pagination.max_page : 1;
+    for (let page = 2; page <= maxPage; page += 1) {
+      const next = await this.request<P>(
+        'GET',
+        `${path}${suffix}${suffix ? '&' : '?'}page=${page}`,
+      );
+      records.push(...(next.items ?? []));
+    }
+    return records;
   }
 }
 
