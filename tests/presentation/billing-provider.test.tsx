@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { BillingProvider } from '../../src/presentation/components/BillingProvider';
 import { BillingContext, type BillingContextValue } from '../../src/presentation/context/billing-context';
 import { NoopNavigationStrategy } from '../../src/presentation/navigation/navigation.strategy';
@@ -21,7 +21,9 @@ function stubAdapter(overrides?: Partial<BillingAdapter>): BillingAdapter {
 
 function ContextProbe({ onValue }: { onValue: (value: unknown) => void }) {
   const ctx = useContext(BillingContext);
-  onValue(ctx);
+  useEffect(() => {
+    onValue(ctx);
+  });
   return null;
 }
 

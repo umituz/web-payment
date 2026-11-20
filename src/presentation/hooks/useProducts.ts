@@ -25,7 +25,9 @@ export function useProducts(options: UseProductsOptions): UseProductsResult {
   const [error, setError] = useState<Error | null>(null);
 
   const optionsRef = useRef({ apiToken, organizationId, isRecurring, enabled });
-  optionsRef.current = { apiToken, organizationId, isRecurring, enabled };
+  useEffect(() => {
+    optionsRef.current = { apiToken, organizationId, isRecurring, enabled };
+  });
 
   const abortRef = useRef<AbortController | null>(null);
 

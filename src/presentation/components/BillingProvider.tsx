@@ -59,9 +59,11 @@ export function BillingProvider({
   const navigationRef = useRef<NavigationStrategy>(navigation ?? defaultNavigation());
   const refreshGenerationRef = useRef(0);
 
-  adapterRef.current = adapter;
-  userIdRef.current = normalizeUserId(userId);
-  navigationRef.current = navigation ?? navigationRef.current;
+  useEffect(() => {
+    adapterRef.current = adapter;
+    userIdRef.current = normalizeUserId(userId);
+    navigationRef.current = navigation ?? navigationRef.current;
+  });
 
   const refresh = useCallback(async (): Promise<void> => {
     const generation = ++refreshGenerationRef.current;
