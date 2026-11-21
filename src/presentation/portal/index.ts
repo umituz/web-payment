@@ -1,4 +1,3 @@
-
 export {
   BillingPortal,
   BillingLayout,
@@ -95,3 +94,5 @@ export { createPortalClient } from './create-portal-client';
 export type { PortalClient, PortalClientOptions } from './create-portal-client';
 export { TurnkeyBillingPage } from './TurnkeyBillingPage';
 export type { TurnkeyBillingPageProps } from './TurnkeyBillingPage';
+export { TurnkeyBillingReturnPage } from './TurnkeyBillingReturnPage';
+export type { TurnkeyBillingReturnPageProps } from './TurnkeyBillingReturnPage';

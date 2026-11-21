@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TurnkeyBillingPage } from '../../../src/presentation/portal/TurnkeyBillingPage';
@@ -92,5 +91,32 @@ describe('TurnkeyBillingPage', () => {
     expect(await screen.findByText('Backend down')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
     expect(adapter.getStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders unconfigured fallback when products are empty', () => {
+    const adapter = makeAdapter();
+    render(
+      <TurnkeyBillingPage
+        adapter={adapter}
+        products={[]}
+        navigation={new NoopNavigationStrategy()}
+      />,
+    );
+
+    expect(screen.getByText('Checkout not configured')).toBeInTheDocument();
+  });
+
+  it('renders custom fallback when provided and products are empty', () => {
+    const adapter = makeAdapter();
+    render(
+      <TurnkeyBillingPage
+        adapter={adapter}
+        products={[]}
+        fallback={<div>Custom Fallback View</div>}
+        navigation={new NoopNavigationStrategy()}
+      />,
+    );
+
+    expect(screen.getByText('Custom Fallback View')).toBeInTheDocument();
   });
 });

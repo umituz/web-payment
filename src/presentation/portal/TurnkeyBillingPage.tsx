@@ -1,5 +1,4 @@
-
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { BillingAdapter } from '../../domain/interfaces';
 import type { BillingCycle } from '../../domain/entities';
 import type { Product } from '../../domain/entities';
@@ -10,18 +9,20 @@ import { BillingPage, PlanComparison, PortalButton, PortalSpinner } from './comp
 import { transformProducts } from './utils';
 import type { BillingLabelsOverrides } from './labels';
 import type { BillingConfig, PlanTier } from './types';
+import { DEFAULT_BILLING_CONFIG } from './constants';
 import { createPortalClient } from './create-portal-client';
 
 export interface TurnkeyBillingPageProps {
   adapter: BillingAdapter;
-  products: Product[];
-  config: Omit<BillingConfig, 'plans'> & { plans?: PlanTier[] };
+  products?: Product[];
+  config?: Partial<BillingConfig> & { brandName?: string; plans?: PlanTier[] };
   userId?: string;
   defaultCycle?: BillingCycle;
   successUrl?: string;
   navigation?: NavigationStrategy;
   locale?: string;
   labels?: BillingLabelsOverrides;
+  fallback?: ReactNode;
   onError?: (error: Error) => void;
 }
 
@@ -44,31 +45,63 @@ export function TurnkeyBillingPage({
   navigation,
   locale,
   labels,
+  fallback,
   onError,
 }: TurnkeyBillingPageProps) {
   const [cycle, setCycle] = useState<BillingCycle>(defaultCycle ?? 'monthly');
   const [selecting, setSelecting] = useState(false);
 
+  const effectiveProducts = useMemo(() => products ?? [], [products]);
+  const plans = useMemo(
+    () => config?.plans ?? transformProducts(effectiveProducts),
+    [config?.plans, effectiveProducts],
+  );
+
   const client = useMemo(
     () =>
       createPortalClient({
         adapter,
-        products,
+        products: effectiveProducts,
         ...(userId !== undefined ? { userId } : {}),
         ...(defaultCycle !== undefined ? { defaultCycle } : {}),
         ...(successUrl !== undefined ? { successUrl } : {}),
         navigation: navigation ?? browserNavigation(),
       }),
-    [adapter, products, userId, defaultCycle, successUrl, navigation],
+    [adapter, effectiveProducts, userId, defaultCycle, successUrl, navigation],
   );
 
   const { billing, isLoading, error, loadBilling, cancelSubscription } = useBilling({ apiClient: client });
 
   useEffect(() => {
-    void loadBilling();
-  }, [loadBilling]);
+    if (plans.length > 0) {
+      void loadBilling();
+    }
+  }, [loadBilling, plans.length]);
 
-  const plans = config.plans ?? transformProducts(products);
+  if (plans.length === 0) {
+    if (fallback !== undefined) {
+      return <>{fallback}</>;
+    }
+    return (
+      <div
+        style={{
+          padding: 24,
+          borderRadius: 8,
+          border: '1px solid #e5e7eb',
+          background: '#f9fafb',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          width: '100%',
+        }}
+      >
+        <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>Checkout not configured</div>
+        <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+          Billing configuration or product tiers are not set on this deployment. Plan changes stay available through the platform console until configured.
+        </div>
+      </div>
+    );
+  }
 
   const selectPlan = async (productId: string) => {
     setSelecting(true);
@@ -97,7 +130,12 @@ export function TurnkeyBillingPage({
     }
   };
 
-  const mergedConfig: BillingConfig = { ...config, plans };
+  const mergedConfig: BillingConfig = {
+    brandName: config?.brandName ?? 'Billing & Subscription',
+    ...DEFAULT_BILLING_CONFIG,
+    ...config,
+    plans,
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
