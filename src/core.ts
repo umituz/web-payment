@@ -106,6 +106,41 @@ export type {
   SubscriptionLifecycleStatus,
 } from './domain/utils/subscription-lifecycle';
 
+export {
+  INVOICE_STATUS,
+  INVOICE_STATUS_VALUES,
+  isKnownInvoiceStatus,
+  INVOICE_LINE_KIND,
+  INVOICE_LINE_KIND_VALUES,
+  isKnownInvoiceLineKind,
+} from './domain/entities/invoice.entity';
+export type {
+  Invoice,
+  InvoiceLine,
+  InvoiceLineKind,
+  InvoiceStatus,
+} from './domain/entities/invoice.entity';
+
+export {
+  computeInvoiceTotals,
+  taxShareOf,
+  makeInvoiceLine,
+  makeInvoice,
+  applyRefundToInvoice,
+} from './domain/utils/invoice-totals';
+export type {
+  InvoiceTotals,
+  MakeInvoiceLineInput,
+  MakeInvoiceInput,
+  RefundInput,
+} from './domain/utils/invoice-totals';
+
+export {
+  DEFAULT_GRACE_PERIOD_MS,
+  graceWindow,
+} from './domain/utils/grace-period';
+export type { GraceWindow, GraceWindowInput } from './domain/utils/grace-period';
+
 export { buildPaidOrderRecord } from './infrastructure/utils/order-record';
 export type {
   BuildPaidOrderRecordInput,

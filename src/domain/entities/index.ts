@@ -4,6 +4,7 @@ export * from './order.entity';
 export * from './cancellation.entity';
 export * from './sync.entity';
 export * from './product.entity';
+export * from './invoice.entity';
 export { SUBSCRIPTION_STATUS_VALUES, isKnownSubscriptionStatus } from '../enums/subscription-status.enum';
 export type { SubscriptionStatusValue } from '../enums/subscription-status.enum';
 export { BILLING_CYCLE, BILLING_CYCLE_VALUES, isKnownBillingCycle } from '../enums/billing-cycle.enum';
