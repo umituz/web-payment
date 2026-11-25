@@ -1,6 +1,11 @@
 
 import type { VisualTone } from '../../theme/visual-tokens';
-import { toMajorUnits } from '../../../domain/utils/minor-units';
+import {
+  formatPrice,
+  calculateDiscount,
+  resolveInvoiceStatusTone,
+  resolveInvoiceStatusLabel,
+} from '../../../domain/utils/pricing';
 import type {
   BillingCycle,
   Invoice,
@@ -14,27 +19,8 @@ export function formatNumber(num: number, locale: string = 'en-US'): string {
   return new Intl.NumberFormat(locale).format(num);
 }
 
-export function formatPrice(amount: number, currency: string = 'USD'): string {
-  const localeMap: Record<string, string> = {
-    USD: 'en-US',
-    EUR: 'de-DE',
-    GBP: 'en-GB',
-    TRY: 'tr-TR',
-    JPY: 'ja-JP',
-  };
+export { formatPrice, calculateDiscount };
 
-  return new Intl.NumberFormat(localeMap[currency] ?? 'en-US', {
-    style: 'currency',
-    currency,
-  }).format(toMajorUnits(amount, currency));
-}
-
-export function calculateDiscount(monthlyPrice: number, yearlyPrice: number): number {
-  if (monthlyPrice <= 0) return 0;
-  const yearlyMonthly = yearlyPrice / 12;
-  const discount = ((monthlyPrice - yearlyMonthly) / monthlyPrice) * 100;
-  return Math.round(Math.max(discount, 0));
-}
 
 export function calculateProratedAmount(
   amount: number,
@@ -85,28 +71,13 @@ export function getStatusLabel(status: SubscriptionStatus): string {
 }
 
 export function getInvoiceStatusTone(status: InvoiceStatus): VisualTone {
-  const toneMap: Record<InvoiceStatus, VisualTone> = {
-    draft: 'neutral',
-    open: 'warning',
-    paid: 'active',
-    void: 'neutral',
-    uncollectible: 'danger',
-    refunded: 'neutral',
-  };
-  return toneMap[status] ?? 'neutral';
+  return resolveInvoiceStatusTone(status);
 }
 
 export function getInvoiceStatusLabel(status: InvoiceStatus): string {
-  const labelMap: Record<InvoiceStatus, string> = {
-    draft: 'Draft',
-    open: 'Open',
-    paid: 'Paid',
-    void: 'Void',
-    uncollectible: 'Uncollectible',
-    refunded: 'Refunded',
-  };
-  return labelMap[status] || status;
+  return resolveInvoiceStatusLabel(status);
 }
+
 
 export function formatCardNumber(last4: string, brand: string): string {
   return `${brand.toUpperCase()} •••• ${last4}`;

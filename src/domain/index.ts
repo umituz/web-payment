@@ -5,3 +5,5 @@ export * from './mappers/product.mapper';
 export * from './utils/minor-units';
 export * from './utils/invoice-totals';
 export * from './utils/grace-period';
+export * from './utils/pricing';
+

@@ -83,6 +83,22 @@ export type {
   CurrencyConfig,
 } from './domain/utils/currency';
 
+export {
+  formatPrice,
+  calculateDiscount,
+  calculateAnnualSavings,
+  calculateDiscountPercent,
+  calculateDiscountAmount,
+  resolveInvoiceStatusTone,
+  resolveInvoiceStatusLabel,
+} from './domain/utils/pricing';
+export type {
+  FormatPriceOptions,
+  AnnualSavings,
+  PaymentVisualTone,
+} from './domain/utils/pricing';
+
+
 export { createCouponCatalog } from './domain/utils/coupon-catalog';
 export type {
   CouponCatalog,
